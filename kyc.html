@@ -384,17 +384,19 @@
 <body>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <p>Uploading documents...</p>
+        
     </div>
     
-    <div class="toast-container" id="toastContainer"></div>
-    
-    <header class="header">KYC Verification</header>
-    
-    <div class="content" id="content">
-        <!-- Content loaded dynamically -->
+    <div class="form-section">
+    <div class="section-header">
+        <div class="section-number">3</div>
+        <div class="section-title">Declaration</div>
     </div>
-    
+    <p style="color: #64748b; font-size: 0.9rem;">
+        I hereby declare that the details furnished above are true and correct to the best of my knowledge.
+    </p>
+</div>
+
     <nav class="bottom-nav">
     <a href="dashboard.html" class="nav-item">
     <i class="fa-solid fa-house"></i>
@@ -583,36 +585,8 @@
             container.innerHTML = html;
         }
         
-        function handleFile(input, type) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                uploadedFiles[type] = file;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const box = document.getElementById(type.replace('Front', '').replace('Back', '').replace('Card', '') + 'Box');
-                    box.classList.add('has-file');
-                    const preview = document.getElementById(type + 'Preview');
-                    preview.innerHTML = `<img src="${e.target.result}" class="preview-img">`;
-                };
-                reader.readAsDataURL(file);
-                
-                showToast(`${type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} selected`, 'success');
-            }
-        }
-        
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            const icon = type === 'success' ? 'check-circle' : 'circle-exclamation';
-            toast.innerHTML = `<i class="fa-solid fa-${icon}" style="color: ${type === 'success' ? '#22c55e' : '#ef4444'};"></i> ${message}`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-        
         async function submitKYC() {
-    // 1. Form data collect karein
+    // Sirf text fields ka data collect kar rahe hain
     const data = {
         name: document.getElementById('kycName').value,
         aadhar: document.getElementById('kycAadhar').value,
@@ -627,7 +601,7 @@
         submittedAt: firebase.database.ServerValue.TIMESTAMP
     };
     
-    // 2. Basic Validation (sirf text fields ke liye)
+    // Sirf in fields ko check karega
     if (!data.name || !data.aadhar || !data.pan || !data.bankDetails.name || !data.bankDetails.account) {
         showToast('Please fill all required fields', 'error');
         return;
@@ -637,20 +611,20 @@
     document.querySelector('#loadingOverlay p').textContent = "Submitting details...";
 
     try {
-        // 3. Seedha Database mein update karein (Storage upload skip kar diya)
+        // Bina kisi file upload ke seedha database mein save
         await db.ref(`partners/${currentUser.uid}/kyc`).update(data);
         await db.ref(`partners/${currentUser.uid}/kycStatus`).set('pending');
         
         document.getElementById('loadingOverlay').classList.remove('active');
-        showToast('KYC details submitted successfully!', 'success');
+        showToast('KYC submitted successfully!', 'success');
         
-        // Refresh page to show pending status
         setTimeout(() => loadKYCData(), 1500);
     } catch (error) {
         document.getElementById('loadingOverlay').classList.remove('active');
         showToast('Error: ' + error.message, 'error');
     }
 }
+
 
     </script>
 </body>
