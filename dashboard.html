@@ -833,15 +833,43 @@
         }
         
         function loadLeads() {
-            const category = partnerData?.category || 'painting';
-            const container = document.getElementById('mainContent');
-            
-            db.ref(`leads/${category}`).on('value', snapshot => {
-                document.getElementById('loadingState').style.display = 'none';
-                currentLeads = snapshot.val() || {};
-                renderLeads();
-            });
-        }
+    // Category check hatakar seedha orders node ko read karein
+    const container = document.getElementById('mainContent');
+    
+    // Aapke console ke mutabiq node ka naam 'orders' hai
+    db.ref(`orders`).on('value', snapshot => {
+        document.getElementById('loadingState').style.display = 'none';
+        currentLeads = snapshot.val() || {};
+        renderLeads();
+    });
+}
+
+function renderLeads() {
+    const container = document.getElementById('mainContent');
+    let html = '';
+    
+    // Stats calculation ke liye currentLeads ka use karein
+    const stats = calculateStats();
+    // ... (baaki ka stats wala design code)
+
+    // Filter Logic: Status 'new' wali bookings ko hi leads ki tarah dikhayein
+    const filteredLeads = Object.entries(currentLeads).filter(([id, lead]) => {
+        if (currentFilter === 'all') return lead.status === 'new'; // Sirf naye orders dikhen
+        return lead.status === currentFilter;
+    });
+
+    if (filteredLeads.length === 0) {
+        html += `<div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <p>No new bookings available in orders node</p>
+                 </div>`;
+    } else {
+        filteredLeads.forEach(([id, lead]) => {
+            html += createLeadCard(id, lead);
+        });
+    }
+    container.innerHTML = html;
+}
+
         
         function renderLeads() {
             const container = document.getElementById('mainContent');
