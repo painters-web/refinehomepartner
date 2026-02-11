@@ -433,22 +433,42 @@
 
         let allLeads = [];
 
-        function loadLeads() {
-            const list = document.getElementById('leadsList');
-            
-            if(partner.verificationStatus !== 'verified') {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: var(--warning);">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <p style="font-weight: 700; color: var(--text); margin-bottom: 8px;">Profile Verification Required</p>
-                        <p style="font-size: 0.9rem; margin-bottom: 20px;">Complete your profile to view and accept leads</p>
-                        <button onclick="window.location.href='partner-profile.html'" style="padding: 16px 32px; background: var(--p); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);">
-                            Complete Profile
-                        </button>
-                    </div>
-                `;
+        <script>
+// Replace loadLeads function start with this:
+
+function loadLeads() {
+    const list = document.getElementById('leadsList');
+    const kycStatus = (partner.kycStatus || '').toString().trim();
+    
+    if(kycStatus !== 'verified') {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: var(--warning);">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <p style="font-weight: 700; color: var(--text); margin-bottom: 8px;">Profile Verification Required</p>
+                <p style="font-size: 0.9rem; margin-bottom: 20px;">Complete your profile to view and accept leads</p>
+                <button onclick="window.location.href='partner-profile.html'" style="padding: 16px 32px; background: var(--p); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);">
+                    Complete Profile
+                </button>
+            </div>
+        `;
+        
+        // Listen for kycStatus changes
+        db.ref('partners/' + partner.id + '/kycStatus').on('value', (snapshot) => {
+            const status = (snapshot.val() || '').toString().trim();
+            if(status === 'verified') {
+                partner.kycStatus = 'verified';
+                localStorage.setItem('partnerData', JSON.stringify(partner));
+                location.reload();
+            }
+        });
+        return;
+    }
+    
+    // Rest of loadLeads code...
+}
+</script>
                 
                 // Listen for verification
                 db.ref('partners/' + partner.id + '/verificationStatus').on('value', (snapshot) => {
