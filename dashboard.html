@@ -960,24 +960,36 @@ function renderLeads() {
         }
         
         function createLeadCard(id, lead) {
-            const statusClass = lead.status;
-            const statusText = lead.status === 'new' ? 'New Lead' : lead.status === 'assigned' ? 'In Progress' : 'Completed';
-            const isMine = lead.partnerId === currentUser.uid;
-            const canAccept = lead.status === 'new' && partnerData?.kycStatus === 'verified';
-            const showOTP = lead.status === 'assigned' && isMine;
-            
-            let actions = '';
-            if (canAccept) {
-                actions = `
-                    <div class="action-btns">
-                        <button class="btn btn-reject" onclick="showConfirm('Reject Lead', 'Are you sure you want to reject this lead?', () => rejectLead('${id}'))">
-                            <i class="fa-solid fa-xmark"></i> Reject
-                        </button>
-                        <button class="btn btn-accept" onclick="acceptLead('${id}')">
-                            <i class="fa-solid fa-check"></i> Accept
-                        </button>
-                    </div>
-                `;
+    const statusText = lead.status === 'new' ? 'New Lead' : lead.status === 'assigned' ? 'In Progress' : 'Completed';
+    const isMine = lead.partnerId === currentUser.uid;
+    
+    // Yahan mapping check karein: Agar 'service' nahi mil raha toh 'category' ya 'type' dekhein
+    const serviceName = lead.service || lead.category || lead.type || "Service";
+    const totalAmount = lead.total || lead.price || lead.amount || 0;
+    const customerName = lead.customer?.name || lead.userName || "Customer";
+    const location = lead.customer?.area || lead.address || "Location";
+
+    return `
+        <div class="lead-card ${lead.status}">
+            <div class="lead-header">
+                <span class="lead-id">#${id.slice(-6).toUpperCase()}</span>
+                <span class="status-badge status-${lead.status}">${statusText}</span>
+            </div>
+            <div class="service-title">${serviceName}</div>
+            <div class="info-row">
+                <div class="info-icon"><i class="fa-solid fa-user"></i></div>
+                <span>${customerName}</span>
+            </div>
+            <div class="info-row">
+                <div class="info-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <span>${location}</span>
+            </div>
+            <div class="lead-amount">${totalAmount}</div>
+            <button class="btn btn-view" onclick="openJobDetail('${id}')">View Details</button>
+        </div>
+    `;
+}
+
             } else if (showOTP) {
                 actions = `
                     <div class="otp-box">
