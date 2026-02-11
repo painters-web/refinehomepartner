@@ -60,20 +60,106 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8", authDomain: "urban-paint-pro.firebaseapp.com", databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "urban-paint-pro", storageBucket: "urban-paint-pro.firebasestorage.app", messagingSenderId: "929763117480", appId: "1:929763117480:web:560057baeb12672078b59d" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const storage = firebase.storage();
+    // ... Firebase Config Same Rahega ...
+    const firebaseConfig = { apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8", authDomain: "urban-paint-pro.firebaseapp.com", databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "urban-paint-pro", storageBucket: "urban-paint-pro.firebasestorage.app", messagingSenderId: "929763117480", appId: "1:929763117480:web:560057baeb12672078b59d" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        let partner = JSON.parse(localStorage.getItem('partnerData'));
-        if(!partner) window.location.href = 'partner-index.html';
+    let localData = JSON.parse(localStorage.getItem('partnerData'));
+    if(!localData) window.location.href = 'partner-index.html';
 
-        document.getElementById('pName').innerText = partner.name;
+    // 1. REAL-TIME LISTENER (Ye naya magic code hai)
+    // Ye check karega ki Admin ne approve kiya ya nahi
+    db.ref('partners/' + localData.id).on('value', snap => {
+        const updatedData = snap.val();
         
-        if(partner.kycStatus === 'verified') {
-            document.getElementById('kycBadge').className = 'kyc-badge verified';
-            document.getElementById('kycBadge').innerText = 'Verified Partner';
+        // LocalStorage update karo
+        localStorage.setItem('partnerData', JSON.stringify(updatedData));
+        localData = updatedData; // Variable bhi update karo
+
+        // UI Refresh karo
+        updateUI(updatedData);
+    });
+
+    function updateUI(data) {
+        document.getElementById('pName').innerText = `Hello ${data.name.split(' ')[0]}!`;
+        document.getElementById('pCat').innerText = `${data.category.toUpperCase()} Expert`;
+
+        // Agar Verified hai, to Alert hata do
+        if(data.kycStatus === 'verified') {
+            document.getElementById('kycBanner').style.display = 'none';
+        } else {
+            document.getElementById('kycBanner').style.display = 'block';
+            // Agar online tha to offline kardo zabardasti
+            if(isOnline) toggleOnline(); 
         }
+    }
+
+    let isOnline = false;
+
+    function toggleOnline() {
+        // Ab ye latest data check karega
+        if(localData.kycStatus !== 'verified') {
+            alert("Account Verification Pending! Please wait for Admin approval.");
+            return;
+        }
+        
+        isOnline = !isOnline;
+        const t = document.getElementById('statusToggle');
+        const statusText = document.getElementById('statusText') || {innerText: ''}; // Safety check
+
+        if(isOnline) {
+            t.classList.add('active');
+            if(statusText) statusText.innerText = 'ONLINE';
+            listenForLeads();
+        } else {
+            t.classList.remove('active');
+            if(statusText) statusText.innerText = 'OFFLINE';
+            stopListening();
+        }
+    }
+
+    function listenForLeads() {
+        document.getElementById('leadsContainer').innerHTML = '<p style="text-align:center; margin-top:20px;">Searching for leads...</p>';
+        
+        db.ref('orders').orderByChild('status').equalTo('pending').on('value', snap => {
+            const container = document.getElementById('leadsContainer');
+            container.innerHTML = '';
+            
+            let hasLeads = false;
+            snap.forEach(child => {
+                const order = child.val();
+                
+                // CATEGORY MATCH
+                if(order.category === localData.category) {
+                    hasLeads = true;
+                    container.innerHTML += `
+                        <div class="lead-card">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span>${order.service}</span>
+                                <span style="color:#0D9488;">₹${order.total}</span>
+                            </div>
+                            <div style="font-size:0.9rem; color:#64748B; margin:5px 0;">
+                                <i class="fa-solid fa-location-dot"></i> ${order.customer.area}
+                            </div>
+                            <button onclick="acceptLead('${child.key}')" style="width:100%; background:#0D9488; color:white; border:none; padding:10px; border-radius:8px; margin-top:10px;">Accept Lead</button>
+                        </div>
+                    `;
+                }
+            });
+
+            if(!hasLeads) container.innerHTML = '<div style="text-align:center; color:#94A3B8; margin-top:20px;">No leads found.</div>';
+        });
+    }
+
+    function stopListening() {
+        db.ref('orders').off();
+        document.getElementById('leadsContainer').innerHTML = '<div style="text-align:center; color:#94A3B8; margin-top:20px;">You are Offline</div>';
+    }
+    
+    // Accept function wahi purana wala rahega...
+
+
 
         function submitKYC() {
             const aadhar = document.getElementById('aadharFile').files[0];
