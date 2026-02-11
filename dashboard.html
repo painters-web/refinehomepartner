@@ -959,36 +959,65 @@ function renderLeads() {
             renderLeads();
         }
         
-        function createLeadCard(id, lead) {
-    const statusText = lead.status === 'new' ? 'New Lead' : lead.status === 'assigned' ? 'In Progress' : 'Completed';
-    const isMine = lead.partnerId === currentUser.uid;
-    
-    // Yahan mapping check karein: Agar 'service' nahi mil raha toh 'category' ya 'type' dekhein
-    const serviceName = lead.service || lead.category || lead.type || "Service";
-    const totalAmount = lead.total || lead.price || lead.amount || 0;
-    const customerName = lead.customer?.name || lead.userName || "Customer";
-    const location = lead.customer?.area || lead.address || "Location";
+        function loadLeads() {
+    // Aapke console ke mutabiq path 'orders' hai
+    db.ref(`orders`).on('value', snapshot => {
+        const loadingState = document.getElementById('loadingState');
+        if (loadingState) loadingState.style.display = 'none';
+        
+        currentLeads = snapshot.val() || {};
+        renderLeads();
+    }, error => {
+        console.error("Firebase Read Error:", error);
+        showToast("Error", "Database access denied", "error");
+    });
+}
 
-    return `
-        <div class="lead-card ${lead.status}">
-            <div class="lead-header">
-                <span class="lead-id">#${id.slice(-6).toUpperCase()}</span>
-                <span class="status-badge status-${lead.status}">${statusText}</span>
+function renderLeads() {
+    const container = document.getElementById('mainContent');
+    let html = '';
+    
+    // Stats calculation
+    const stats = calculateStats();
+    html += `
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-icon new"><i class="fa-solid fa-plus"></i></div>
+                <div class="stat-value">${stats.new}</div>
+                <div class="stat-label">New</div>
             </div>
-            <div class="service-title">${serviceName}</div>
-            <div class="info-row">
-                <div class="info-icon"><i class="fa-solid fa-user"></i></div>
-                <span>${customerName}</span>
+            <div class="stat-box">
+                <div class="stat-icon active"><i class="fa-solid fa-spinner"></i></div>
+                <div class="stat-value">${stats.active}</div>
+                <div class="stat-label">Active</div>
             </div>
-            <div class="info-row">
-                <div class="info-icon"><i class="fa-solid fa-location-dot"></i></div>
-                <span>${location}</span>
+            <div class="stat-box">
+                <div class="stat-icon earnings"><i class="fa-solid fa-check"></i></div>
+                <div class="stat-value">${stats.completed}</div>
+                <div class="stat-label">Done</div>
             </div>
-            <div class="lead-amount">${totalAmount}</div>
-            <button class="btn btn-view" onclick="openJobDetail('${id}')">View Details</button>
         </div>
     `;
+
+    // Filter logic
+    const filteredLeads = Object.entries(currentLeads).filter(([id, lead]) => {
+        if (currentFilter === 'all') return true;
+        return lead.status === currentFilter;
+    });
+
+    if (filteredLeads.length === 0) {
+        html += `<div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <p>No leads found in 'orders'</p>
+                 </div>`;
+    } else {
+        filteredLeads.forEach(([id, lead]) => {
+            html += createLeadCard(id, lead);
+        });
+    }
+    container.innerHTML = html;
 }
+
 
             } else if (showOTP) {
                 actions = `
