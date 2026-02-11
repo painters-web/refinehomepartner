@@ -581,49 +581,4 @@
         loadLeads();
     </script>
 </body>
-</html>eted_pending_review';
-            updates[`partners/${partner.id}/jobsCompleted`] = (partner.jobsCompleted || 0) + 1;
-            
-            db.ref().update(updates).then(() => {
-                partner.jobsCompleted = (partner.jobsCompleted || 0) + 1;
-                localStorage.setItem('partnerData', JSON.stringify(partner));
-                
-                showToast('Job marked as completed!', 'success');
-                closeCompleteModal();
-                loadJobs();
-            }).catch(err => {
-                showToast('Error: ' + err.message, 'error');
-            });
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-xmark';
-            const color = type === 'success' ? 'var(--success)' : '#EF4444';
-            
-            toast.innerHTML = `
-                <div style="width: 40px; height: 40px; background: ${type === 'success' ? '#F0FDF4' : '#FEF2F2'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: ${color};">
-                    <i class="fa-solid ${icon}"></i>
-                </div>
-                <div style="font-weight: 700; color: #1E293B;">${message}</div>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 100);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
-        }
-
-        document.getElementById('completeModal').addEventListener('click', function(e) {
-            if(e.target === this) closeCompleteModal();
-        });
-
-        loadJobs();
-    </script>
-</body>
 </html>
