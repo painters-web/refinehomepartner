@@ -623,22 +623,37 @@
         `;
 
         // Check verification status
-        if(partner.verificationStatus !== 'verified') {
-            document.getElementById('kycBanner').style.display = 'flex';
-            
-            // Listen for verification
-            db.ref('partners/' + partner.id + '/verificationStatus').on('value', (snapshot) => {
-                if(snapshot.val() === 'verified') {
-                    partner.verificationStatus = 'verified';
-                    localStorage.setItem('partnerData', JSON.stringify(partner));
-                    showModal('Verified!', 'Your profile is verified! Refreshing...', 'success');
-                    setTimeout(() => location.reload(), 2000);
-                }
-            });
-        } else {
-            // Auto load leads if verified (NO TOGGLE NEEDED)
-            loadLeads();
+        <!-- Replace the verification check section with this: -->
+
+
+// Check kycStatus with trim
+const kycStatus = (partner.kycStatus || '').toString().trim();
+
+if(kycStatus !== 'verified') {
+    document.getElementById('kycBanner').style.display = 'flex';
+    document.getElementById('kycBanner').innerHTML = `
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+            <div style="font-weight: 800;">Complete Profile!</div>
+            <div style="font-size: 0.85rem; opacity: 0.9;">Add details to start earning (20.5% fee applies)</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="margin-left: auto;"></i>
+    `;
+    
+    // Listen for kycStatus changes
+    db.ref('partners/' + partner.id + '/kycStatus').on('value', (snapshot) => {
+        const status = (snapshot.val() || '').toString().trim();
+        if(status === 'verified') {
+            partner.kycStatus = 'verified';
+            localStorage.setItem('partnerData', JSON.stringify(partner));
+            showModal('Verified!', 'Your profile is verified! Refreshing...', 'success');
+            setTimeout(() => location.reload(), 2000);
         }
+    });
+} else {
+    loadLeads();
+}
+
 
         function loadLeads() {
             const container = document.getElementById('leadsContainer');
