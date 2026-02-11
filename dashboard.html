@@ -833,16 +833,19 @@
         }
         
         function loadLeads() {
-    // Category check hatakar seedha orders node ko read karein
-    const container = document.getElementById('mainContent');
-    
-    // Aapke console ke mutabiq node ka naam 'orders' hai
-    db.ref(`orders`).on('value', snapshot => {
-        document.getElementById('loadingState').style.display = 'none';
+    // Purana path 'leads/${category}' hata kar seedha 'orders' karein
+    db.ref('orders').on('value', snapshot => {
+        const loadingState = document.getElementById('loadingState');
+        if (loadingState) loadingState.style.display = 'none';
+        
         currentLeads = snapshot.val() || {};
         renderLeads();
+    }, error => {
+        console.error("Firebase Error:", error);
+        document.getElementById('loadingState').innerHTML = "<p>Connection Error!</p>";
     });
 }
+
 
 function renderLeads() {
     const container = document.getElementById('mainContent');
@@ -1036,31 +1039,29 @@ function renderLeads() {
             } else {
                 actions = `<button class="btn btn-view" disabled style="opacity: 0.5;">Assigned to Other</button>`;
             }
+            function createLeadCard(id, lead) {
+    // Database ke sahi fields yahan map karein
+    const serviceName = lead.service || lead.category || "General Service";
+    const customerName = lead.customer?.name || lead.userName || "Customer";
+    const area = lead.customer?.area || lead.address || "Location";
+    const amount = lead.total || lead.price || "0";
+
+    return `
+        <div class="lead-card ${lead.status || 'new'}">
+            <div class="lead-header">
+                <span class="lead-id">#${id.slice(-6).toUpperCase()}</span>
+                <span class="status-badge status-${lead.status || 'new'}">${lead.status || 'new'}</span>
+            </div>
+            <div class="service-title" style="font-weight:800; color:#0D9488; margin:10px 0;">${serviceName}</div>
+            <div class="info-row"><i class="fa-solid fa-user"></i> <span>${customerName}</span></div>
+            <div class="info-row"><i class="fa-solid fa-location-dot"></i> <span>${area}</span></div>
+            <div class="lead-amount" style="font-size:1.2rem; font-weight:800; margin-top:10px;">₹${amount}</div>
+            <button class="btn btn-view" onclick="openJobDetail('${id}')" style="width:100%; margin-top:10px;">View Details</button>
+        </div>
+    `;
+            }
+        
             
-            return `
-                <div class="lead-card ${statusClass}">
-                    <div class="lead-header">
-                        <span class="lead-id">#${id.slice(-6).toUpperCase()}</span>
-                        <span class="status-badge status-${lead.status}">${statusText}</span>
-                    </div>
-                    <div class="service-title">${lead.service}</div>
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fa-solid fa-user"></i></div>
-                        <span>${lead.customer?.name || 'Customer'}</span>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fa-solid fa-location-dot"></i></div>
-                        <span>${lead.customer?.area || 'Location'}</span>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-icon"><i class="fa-solid fa-calendar"></i></div>
-                        <span>${lead.slot?.date || 'Date TBD'}</span>
-                    </div>
-                    <div class="lead-amount">${lead.total || 0}</div>
-                    ${actions}
-                </div>
-            `;
-        }
         
         async function acceptLead(leadId) {
             const category = partnerData.category;
