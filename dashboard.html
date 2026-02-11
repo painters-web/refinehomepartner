@@ -3,47 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - RefineHome Partner</title>
+    <title>Partner Dashboard - RefineHome</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* CSS Same Rehega Jaisa Pehle Tha */
+        :root { --primary: #0D9488; --bg: #F0FDFA; --text: #134e4a; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f0fdfa; min-height: 100vh; padding-bottom: 90px; color: #134e4a; }
-        .header { position: fixed; top: 0; left: 0; right: 0; height: 70px; background: white; display: flex; align-items: center; padding: 0 20px; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .content { margin-top: 90px; padding: 0 20px; max-width: 800px; margin: 90px auto 0; }
-        .lead-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #0D9488; }
-        .service-title { font-size: 1.2rem; font-weight: 800; color: #0D9488; margin-bottom: 10px; }
-        .info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: #475569; }
-        .lead-amount { font-size: 1.3rem; font-weight: 800; margin: 15px 0; }
-        .btn-view { width: 100%; padding: 12px; background: #0D9488; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #eee; }
-        .nav-item { text-decoration: none; color: #94a3b8; text-align: center; font-size: 0.8rem; }
-        .nav-item.active { color: #0D9488; }
-        .loading-state { text-align: center; padding: 50px; color: #64748b; }
+        body { background: var(--bg); min-height: 100vh; padding-bottom: 90px; color: var(--text); }
+        
+        /* Header with Sync Button */
+        .header { 
+            position: fixed; top: 0; left: 0; right: 0; height: 70px; 
+            background: white; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 20px; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+        }
+        .header h2 { color: var(--primary); font-weight: 800; font-size: 1.2rem; }
+        .sync-btn {
+            background: #E0F2FE; color: #0284C7; border: none; padding: 8px 12px; 
+            border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .sync-btn:active { transform: scale(0.95); }
+
+        .content { margin-top: 90px; padding: 0 20px; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+        /* Lead Card Styling */
+        .lead-card { 
+            background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border-left: 5px solid var(--primary); 
+            position: relative; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .status-badge { 
+            position: absolute; top: 20px; right: 20px; 
+            background: #DCFCE7; color: #166534; padding: 5px 12px; 
+            border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; 
+        }
+        
+        .service-title { font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+        .info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: #64748b; font-size: 0.95rem; }
+        .info-row i { width: 20px; text-align: center; color: var(--primary); }
+        
+        .lead-amount { 
+            font-size: 1.4rem; font-weight: 800; margin: 15px 0; color: var(--primary); 
+            background: #F0FDFA; display: inline-block; padding: 5px 15px; border-radius: 10px;
+        }
+        
+        .action-area { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-accept { 
+            flex: 1; padding: 14px; background: linear-gradient(135deg, #0D9488, #14B8A6); 
+            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; 
+            font-size: 1rem; box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2);
+        }
+        .btn-details {
+            padding: 14px; background: #F1F5F9; color: #475569; border: none; 
+            border-radius: 12px; font-weight: 700; cursor: pointer;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; background: white; 
+            display: flex; justify-content: space-around; padding: 12px 0 20px; 
+            border-top: 1px solid #f1f5f9; z-index: 100; 
+        }
+        .nav-item { 
+            text-decoration: none; color: #94a3b8; text-align: center; 
+            font-size: 0.75rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; 
+        }
+        .nav-item i { font-size: 1.4rem; }
+        .nav-item.active { color: var(--primary); }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
-    <header class="header"><h2 style="color:#0D9488">My Leads</h2></header>
+
+    <header class="header">
+        <h2>RefineHome</h2>
+        <button class="sync-btn" onclick="syncMissingOrders()">
+            <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+    </header>
 
     <main class="content" id="mainContent">
-        <div id="loadingState" class="loading-state">
-            <i class="fas fa-spinner fa-spin fa-2x"></i>
-            <p>Fetching orders...</p>
+        <div class="loading-overlay" id="loader">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: #0D9488;"></i>
+            <p style="margin-top: 10px; font-weight: 600; color: #0D9488;">Searching for jobs...</p>
         </div>
     </main>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-house"></i><div>Home</div></a>
-        <a href="earnings.html" class="nav-item"><i class="fa-solid fa-wallet"></i><div>Earnings</div></a>
-        <a href="reviews.html" class="nav-item"><i class="fa-solid fa-star"></i><div>Reviews</div></a>
-        <a href="kyc.html" class="nav-item"><i class="fa-solid fa-id-card"></i><div>KYC</div></a>
-        <a href="profile.html" class="nav-item"><i class="fa-solid fa-user"></i><div>Profile</div></a>
+        <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-house"></i>Home</a>
+        <a href="earnings.html" class="nav-item"><i class="fa-solid fa-wallet"></i>Earnings</a>
+        <a href="reviews.html" class="nav-item"><i class="fa-solid fa-star"></i>Reviews</a>
+        <a href="kyc.html" class="nav-item"><i class="fa-solid fa-id-card"></i>KYC</a>
+        <a href="profile.html" class="nav-item"><i class="fa-solid fa-user"></i>Profile</a>
     </nav>
 
     <script>
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
             authDomain: "urban-paint-pro.firebaseapp.com",
@@ -57,57 +122,169 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        
-        let currentLeads = {};
+        let currentUser = null;
+        let partnerCategory = "";
 
-        auth.onAuthStateChanged(user => {
+        // --- AUTH & INIT ---
+        auth.onAuthStateChanged(async user => {
             if (!user) { window.location.href = 'index.html'; return; }
+            currentUser = user;
+            
+            // 1. Partner ki Category pata karo
+            const pSnap = await db.ref(`partners/${user.uid}`).once('value');
+            const pData = pSnap.val();
+            partnerCategory = (pData?.category || "").toLowerCase();
+            
+            // 2. Data Sync aur Load karo
+            await syncMissingOrders(); // Automatic fix
             loadLeads();
         });
 
+        // --- CORE FUNCTION: LOAD LEADS ---
         function loadLeads() {
-            // Seedha 'orders' node ko hit kar rahe hain
+            // Ab hum 'orders' folder ko dekh rahe hain jahan sync karke data laya gaya hai
             db.ref('orders').on('value', snapshot => {
-                const loader = document.getElementById('loadingState');
-                if (loader) loader.style.display = 'none';
-                
-                currentLeads = snapshot.val() || {};
-                renderLeads();
-            }, error => {
-                console.error("Firebase Error:", error);
-                document.getElementById('mainContent').innerHTML = "<p style='text-align:center'>Error loading data. Check Rules.</p>";
+                document.getElementById('loader').style.display = 'none';
+                const orders = snapshot.val() || {};
+                renderOrders(orders);
             });
         }
 
-        function renderLeads() {
-    const container = document.getElementById('mainContent');
-    let html = '';
-    
-    // Partner ki apni category check karein
-    const partnerCategory = partnerData?.category || ''; 
-    
-    // Orders ko filter karein partner ki category ke hisaab se
-    const filteredEntries = Object.entries(currentLeads).filter(([id, lead]) => {
-        // Condition 1: Lead ka status 'new' hona chahiye
-        // Condition 2: Lead ki category aur Partner ki category match honi chahiye
-        const leadCategory = lead.service || lead.category || '';
-        return lead.status === 'new' && leadCategory.toLowerCase() === partnerCategory.toLowerCase();
-    });
+        // --- CORE FUNCTION: RENDER ---
+        function renderOrders(orders) {
+            const container = document.getElementById('mainContent');
+            let html = '';
+            let count = 0;
 
-    if (filteredEntries.length === 0) {
-        html = `
-            <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
-                <i class="fa-solid fa-filter-circle-xmark" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
-                <p>No new ${partnerCategory} leads available for you right now.</p>
-            </div>`;
-    } else {
-        filteredEntries.forEach(([id, lead]) => {
-            html += createLeadCard(id, lead);
-        });
-    }
-    container.innerHTML = html;
-}
+            // Orders ko loop karo (latest first)
+            Object.entries(orders).reverse().forEach(([id, lead]) => {
+                // 1. Status Check: Customer app 'pending' bhejta hai
+                const isNew = lead.status === 'pending' || lead.status === 'new';
+                
+                // 2. Category Check: 'Home Painting' mein 'painting' word dhoondo
+                // Agar partner category nahi hai to sab dikhao ('all')
+                const serviceName = (lead.service || "").toLowerCase();
+                const isMatch = partnerCategory === 'all' || serviceName.includes(partnerCategory);
 
+                if (isNew && isMatch) {
+                    count++;
+                    html += `
+                        <div class="lead-card">
+                            <span class="status-badge">New Request</span>
+                            <div class="service-title">${lead.service || "New Service"}</div>
+                            
+                            <div class="info-row">
+                                <i class="fa-solid fa-user"></i> 
+                                <span>Customer (ID: ${lead.userId ? lead.userId.slice(0,5) : 'Unknown'})</span>
+                            </div>
+                            
+                            <div class="info-row">
+                                <i class="fa-regular fa-calendar"></i> 
+                                <span>${lead.slot?.date || "Date Pending"} - ${lead.slot?.time || ""}</span>
+                            </div>
+                            
+                            <div class="info-row">
+                                <i class="fa-solid fa-location-dot"></i> 
+                                <span>${lead.customer?.address || lead.address || "View details for address"}</span>
+                            </div>
+
+                            <div class="lead-amount">₹${lead.total || 0}</div>
+                            
+                            <div class="action-area">
+                                <button class="btn-details" onclick="alert('Full details: ${lead.service}')"><i class="fa-solid fa-eye"></i></button>
+                                <button class="btn-accept" onclick="acceptJob('${id}', '${lead.userId}')">Accept Job</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (count === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-box-open" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <h3>No new jobs found</h3>
+                        <p>Looking for <strong>${partnerCategory}</strong> jobs...</p>
+                        <p style="font-size: 0.8rem; margin-top: 10px; color: #0D9488;">Tip: Press Refresh button on top</p>
+                    </div>`;
+            } else {
+                container.innerHTML = html;
+            }
+        }
+
+        // --- MAGIC SYNC FUNCTION (Yeh data dhoond kar lata hai) ---
+        async function syncMissingOrders() {
+            const loader = document.getElementById('loader');
+            if(loader) loader.style.display = 'flex';
+
+            try {
+                // 1. Saare users ka data check karo (Admin access chahiye ya public rules)
+                const usersSnap = await db.ref('users').once('value');
+                const users = usersSnap.val() || {};
+                
+                let updates = {};
+                let found = 0;
+
+                // 2. Har user ke order ko check karo
+                Object.keys(users).forEach(userId => {
+                    const userOrders = users[userId].orders || {};
+                    Object.keys(userOrders).forEach(orderId => {
+                        const order = userOrders[orderId];
+                        
+                        // Agar order 'pending' hai, toh usse public 'orders' folder mein daal do
+                        if (order.status === 'pending') {
+                            // Order ID ke saath userId bhi save karo taaki customer se link rahe
+                            updates[`orders/${orderId}`] = {
+                                ...order,
+                                userId: userId, // Important: Customer ID link
+                                syncedAt: firebase.database.ServerValue.TIMESTAMP
+                            };
+                            found++;
+                        }
+                    });
+                });
+
+                // 3. Agar kuch naya mila to update karo
+                if (found > 0) {
+                    await db.ref().update(updates);
+                    console.log(`Synced ${found} orders to dashboard.`);
+                }
+            } catch (e) {
+                console.error("Sync error:", e);
+                // Agar permission error aaye to ignore karo, shayad data pehle se orders node me ho
+            } finally {
+                if(loader) loader.style.display = 'none';
+            }
+        }
+
+        // --- ACCEPT JOB FUNCTION ---
+        window.acceptJob = async function(leadId, customerId) {
+            if (!confirm("Are you sure you want to accept this job?")) return;
+            
+            try {
+                const partnerName = (await db.ref(`partners/${currentUser.uid}/name`).once('value')).val();
+                
+                // 1. Public Order update karo
+                await db.ref(`orders/${leadId}`).update({
+                    status: 'assigned',
+                    partnerId: currentUser.uid,
+                    partnerName: partnerName
+                });
+                
+                // 2. Agar Customer ID pata hai, to uska personal order bhi update karo
+                if (customerId) {
+                    await db.ref(`users/${customerId}/orders/${leadId}`).update({
+                        status: 'assigned',
+                        partnerId: currentUser.uid,
+                        partnerName: partnerName
+                    });
+                }
+                
+                alert("Job Accepted Successfully!");
+            } catch (e) {
+                alert("Error accepting job: " + e.message);
+            }
+        }
     </script>
 </body>
 </html>
