@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile & KYC | Refine Partner</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --p: #0D9488; --p-dark: #0F766E; --p-light: #14B8A6;
+            --bg: #F0FDFA; --card: #FFFFFF; --text: #134E4A; --text-light: #64748B;
+            --border: #E2E8F0; --success: #10B981; --warning: #F59E0B; --danger: #EF4444;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: linear-gradient(180deg, #F0FDFA 0%, #FFFFFF 100%); min-height: 100vh; padding-bottom: 100px; }
+
+        .header {
+            background: linear-gradient(135deg, var(--p) 0%, var(--p-light) 100%);
+            color: white;
+            padding: 30px 24px;
+            border-radius: 0 0 32px 32px;
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.3);
+            text-align: center;
+            position: relative;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--p);
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        
+        .profile-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+        
+        .kyc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .kyc-badge.verified { background: rgba(34, 197, 94, 0.2); color: #86EFAC; }
+        .kyc-badge.pending { background: rgba(251, 191, 36, 0.2); color: #FDE68A; }
+
+        .content { padding: 24px; }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1E293B;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        
+        .info-row:last-child { border-bottom: none; }
+        
+        .info-label { color: var(--text-light); font-size: 0.9rem; }
+        .info-value { font-weight: 700; color: #1E293B; }
+
+        .kyc-section {
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+            border: 2px dashed #FDBA74;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .kyc-section.verified {
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            border: 2px solid #86EFAC;
+        }
+        
+        .kyc-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #92400E;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .kyc-section.verified .kyc-title { color: #166534; }
+        
+        .kyc-text {
+            color: #B45309;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .kyc-section.verified .kyc-text { color: #15803D; }
+
+        .file-input-group {
+            margin-bottom: 16px;
+        }
+        
+        .file-label {
+            display: block;
+            font-weight: 700;
+            color: #1E293B;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px;
+            background: white;
+            border: 2px dashed #CBD5E1;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        
+        .file-input-label:hover {
+            border-color: var(--p);
+            color: var(--p);
+            background: #F0FDFA;
+        }
+        
+        .file-input-label.has-file {
+            border-color: var(--success);
+            color: var(--success);
+            background: #F0FDF4;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--p) 0%, var(--p-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.4);
+        }
+        
+        .btn-submit:disabled {
+            background: #94A3B8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .menu-list {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid #F1F5F9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:hover { background: #F8FAFC; }
+        
+        .menu-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: #F0FDFA;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--p);
+            font-size: 1.1rem;
+        }
+        
+        .menu-text { font-weight: 700; color: #1E293B; }
+        .menu-arrow { color: #94A3B8; }
+        
+        .menu-item.logout .menu-icon { background: #FEF2F2; color: #EF4444; }
+        .menu-item.logout .menu-text { color: #EF4444; }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding-bottom: 10px;
+        }
+        
+        .nav-item {
+            text-align: center;
+            color: #94A3B8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            width: 64px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active { 
+            color: var(--p); 
+            background: #F0FDFA; 
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-container {
+            background: white;
+            border-radius: 28px;
+            padding: 32px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .modal-overlay.active .modal-container { transform: scale(1) translateY(0); }
+        
+        .modal-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+        }
+        
+        .modal-icon.success { background: #DCFCE7; color: #16A34A; }
+        .modal-icon.error { background: #FEF2F2; color: #EF4444; }
+        .modal-icon.warning { background: #FFF7ED; color: #F97316; }
+        
+        .modal-title { font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 12px; }
+        .modal-text { color: #64748B; font-size: 1rem; margin-bottom: 24px; }
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--p) 0%, var(--p-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="back-btn" onclick="window.location.href='partner-dashboard.html'">
+            <i class="fa-solid fa-arrow-left"></i>
+        </div>
+        <div class="profile-avatar">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-name" id="pName">Partner Name</div>
+        <div class="kyc-badge pending" id="kycBadge">
+            <i class="fa-solid fa-clock"></i>
+            <span>Verification Pending</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="section-title">
+            <i class="fa-solid fa-id-card" style="color: var(--p);"></i>
+            Personal Information
+        </div>
+        
+        <div class="info-card">
+            <div class="info-row">
+                <span class="info-label">Full Name</span>
+                <span class="info-value" id="infoName">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value" id="infoEmail">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone</span>
+                <span class="info-value" id="infoPhone">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Category</span>
+                <span class="info-value" id="infoCategory">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">City</span>
+                <span class="info-value" id="infoCity">-</span>
+            </div>
+        </div>
+
+        <div class="section-title" id="kycSectionTitle">
+            <i class="fa-solid fa-shield-halved" style="color: var(--warning);"></i>
+            KYC Verification
+        </div>
+
+        <div class="kyc-section" id="kycSection">
+            <div class="kyc-title">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Documents Required</span>
+            </div>
+            <div class="kyc-text">
+                Please upload your Aadhar Card and PAN Card to verify your account and start accepting jobs.
+            </div>
+            
+            <div class="file-input-group">
+                <label class="file-label">Aadhar Card (Front)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="aadharFile" accept="image/*" onchange="handleFileSelect(this, 'aadhar')">
+                    <label for="aadharFile" class="file-input-label" id="aadharLabel">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Upload Aadhar Card</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="file-input-group">
+                <label class="file-label">PAN Card</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="panFile" accept="image/*" onchange="handleFileSelect(this, 'pan')">
+                    <label for="panFile" class="file-input-label" id="panLabel">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Upload PAN Card</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="btn-submit" onclick="submitKYC()" id="submitBtn">
+                Submit Documents
+            </button>
+        </div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-gear" style="color: var(--p);"></i>
+            Settings
+        </div>
+        
+        <div class="menu-list">
+            <div class="menu-item" onclick="window.location.href='partner-wallet.html'">
+                <div class="menu-left">
+                    <div class="menu-icon">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <span class="menu-text">My Wallet</span>
+                </div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="window.location.href='partner-support.html'">
+                <div class="menu-left">
+                    <div class="menu-icon">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                    <span class="menu-text">Help & Support</span>
+                </div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item logout" onclick="logout()">
+                <div class="menu-left">
+                    <div class="menu-icon">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </div>
+                    <span class="menu-text">Logout</span>
+                </div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-dashboard.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-leads.html'">
+            <i class="fa-solid fa-bolt"></i>Leads
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item active" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-container">
+            <div class="modal-icon" id="modalIcon"></div>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-text" id="modalText"></div>
+            <button class="modal-btn" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const storage = firebase.storage();
+
+        let partner = JSON.parse(localStorage.getItem('partnerData'));
+        if(!partner) window.location.href = 'partner-index.html';
+
+        let files = { aadhar: null, pan: null };
+
+        // Load data
+        document.getElementById('pName').textContent = partner.name || 'Partner';
+        document.getElementById('infoName').textContent = partner.name || '-';
+        document.getElementById('infoEmail').textContent = partner.email || '-';
+        document.getElementById('infoPhone').textContent = partner.phone || '-';
+        document.getElementById('infoCategory').textContent = partner.category ? partner.category.toUpperCase() : '-';
+        document.getElementById('infoCity').textContent = partner.city || '-';
+
+        // Check KYC status
+        if(partner.kycStatus === 'verified') {
+            document.getElementById('kycBadge').className = 'kyc-badge verified';
+            document.getElementById('kycBadge').innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Verified</span>';
+            document.getElementById('kycSection').className = 'kyc-section verified';
+            document.getElementById('kycSection').innerHTML = `
+                <div class="kyc-title">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Verification Complete</span>
+                </div>
+                <div class="kyc-text">
+                    Your account is verified. You can now accept leads and start working!
+                </div>
+            `;
+            document.getElementById('kycSectionTitle').style.display = 'none';
+        }
+
+        function handleFileSelect(input, type) {
+            if(input.files && input.files[0]) {
+                files[type] = input.files[0];
+                const label = document.getElementById(type + 'Label');
+                label.classList.add('has-file');
+                label.innerHTML = `<i class="fa-solid fa-check-circle"></i><span>${input.files[0].name}</span>`;
+            }
+        }
+
+        function submitKYC() {
+            if(!files.aadhar || !files.pan) {
+                showModal('Missing Documents', 'Please upload both Aadhar and PAN card', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Uploading...';
+
+            const aadharRef = storage.ref(`partners/${partner.id}/aadhar.jpg`);
+            const panRef = storage.ref(`partners/${partner.id}/pan.jpg`);
+
+            Promise.all([
+                aadharRef.put(files.aadhar),
+                panRef.put(files.pan)
+            ]).then(() => {
+                // Update DB
+                return db.ref(`partners/${partner.id}`).update({ 
+                    kycStatus: 'verified',
+                    kycSubmittedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            }).then(() => {
+                partner.kycStatus = 'verified';
+                localStorage.setItem('partnerData', JSON.stringify(partner));
+                showModal('Success!', 'Documents uploaded successfully. Your account is now verified.', 'success');
+                setTimeout(() => location.reload(), 2000);
+            }).catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = 'Submit Documents';
+                showModal('Error', err.message, 'error');
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('partnerData');
+            window.location.href = 'partner-index.html';
+        }
+
+        function showModal(title, text, type) {
+            const modal = document.getElementById('modal');
+            const icon = document.getElementById('modalIcon');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            
+            icon.className = 'modal-icon ' + type;
+            if(type === 'success') icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            else if(type === 'error') icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            else if(type === 'warning') icon.innerHTML = '<i class="fa-solid fa-exclamation"></i>';
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if(e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
