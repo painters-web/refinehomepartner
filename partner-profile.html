@@ -86,7 +86,6 @@
         
         .status-badge.verified { background: rgba(16, 185, 129, 0.2); color: #34D399; }
         .status-badge.pending { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
-        .status-badge.rejected { background: rgba(239, 68, 68, 0.2); color: #F87171; }
 
         .content { padding: 24px; }
 
@@ -300,7 +299,6 @@
         
         .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
 
-        /* Modal Styles - Dark Theme */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -339,7 +337,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 24px;
+            margin: 0 auto 20px;
             font-size: 2.5rem;
             background: rgba(13, 148, 136, 0.1);
             color: var(--p-light);
@@ -348,7 +346,6 @@
         
         .modal-icon.success { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: var(--success); }
         .modal-icon.error { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: var(--danger); }
-        .modal-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: var(--warning); }
         
         .modal-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 12px; }
         .modal-text { color: var(--text-light); font-size: 1rem; margin-bottom: 24px; line-height: 1.5; }
@@ -365,8 +362,6 @@
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
-        
-        .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3); }
 
         .loading-overlay {
             position: fixed;
@@ -419,18 +414,6 @@
         }
         
         .toast.show { transform: translateX(0); }
-        
-        .toast-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            background: rgba(13, 148, 136, 0.1);
-            color: var(--p-light);
-        }
     </style>
 </head>
 <body>
@@ -450,7 +433,6 @@
     </div>
 
     <div class="content">
-        <!-- Verification Status Alert -->
         <div class="verification-alert" id="verificationAlert">
             <div class="alert-icon">
                 <i class="fa-solid fa-hourglass-half"></i>
@@ -461,7 +443,6 @@
             </div>
         </div>
 
-        <!-- Personal Details Section -->
         <div class="section-title">
             <i class="fa-solid fa-user" style="color: var(--p-light);"></i>
             Personal Details
@@ -506,7 +487,6 @@
             </div>
         </div>
 
-        <!-- KYC Details Section -->
         <div class="section-title">
             <i class="fa-solid fa-id-card" style="color: var(--warning);"></i>
             KYC Details
@@ -525,7 +505,6 @@
             </div>
         </div>
 
-        <!-- Bank Details Section -->
         <div class="section-title">
             <i class="fa-solid fa-building-columns" style="color: var(--p-light);"></i>
             Bank Account Details
@@ -534,7 +513,7 @@
         <div class="form-card" id="bankForm">
             <div class="info-text">
                 <i class="fa-solid fa-shield-halved" style="color: var(--success);"></i>
-                <span>Your payout (79.5% of job amount) will be transferred here immediately after job completion</span>
+                <span>Your payout (79.5% of job amount) will be transferred here</span>
             </div>
 
             <div class="input-group">
@@ -564,7 +543,6 @@
             </div>
         </div>
 
-        <!-- Display saved bank details (shown when verified) -->
         <div class="bank-display" id="bankDisplay" style="display: none;">
             <div class="bank-row">
                 <div>
@@ -586,7 +564,7 @@
                 </div>
                 <div style="text-align: right;">
                     <div class="bank-label">UPI</div>
-                    <div class="bank-value" id="displayUpi">upi@id</div>
+               <div class="bank-value" id="displayUpi">upi@id</div>
                 </div>
             </div>
         </div>
@@ -611,7 +589,6 @@
         </div>
     </div>
 
-    <!-- Custom Modal -->
     <div class="modal-overlay" id="customModal">
         <div class="modal-container">
             <div class="modal-icon" id="modalIcon">
@@ -658,11 +635,11 @@
         function loadData() {
             document.getElementById('pName').textContent = partner.name || 'Partner';
             
-            // Check verification status
-            if(partner.verificationStatus === 'verified') {
+            // Check kycStatus with trim to handle spaces
+            const kycStatus = (partner.kycStatus || '').toString().trim();
+            
+            if(kycStatus === 'verified') {
                 showVerifiedState();
-            } else if(partner.verificationStatus === 'rejected') {
-                showRejectedState();
             } else {
                 // Pre-fill if data exists
                 if(partner.fullName) document.getElementById('fullName').value = partner.fullName;
@@ -711,19 +688,6 @@
             }
         }
 
-        function showRejectedState() {
-            document.getElementById('statusBadge').className = 'status-badge rejected';
-            document.getElementById('statusBadge').innerHTML = '<i class="fa-solid fa-xmark"></i><span>Rejected</span>';
-            
-            document.getElementById('verificationAlert').style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.2) 100%)';
-            document.getElementById('verificationAlert').style.borderColor = 'var(--danger)';
-            document.getElementById('verificationAlert').innerHTML = `
-                <div class="alert-icon" style="background: rgba(239, 68, 68, 0.2); color: var(--danger);"><i class="fa-solid fa-xmark"></i></div>
-                <div class="alert-title" style="color: var(--danger);">Verification Failed</div>
-                <div class="alert-text">${partner.rejectionReason || 'Please check your details and submit again.'}</div>
-            `;
-        }
-
         function submitProfile() {
             // Get all values
             const data = {
@@ -741,7 +705,8 @@
                     accountNumber: document.getElementById('accountNumber').value.trim(),
                     ifscCode: document.getElementById('ifscCode').value.trim().toUpperCase(),
                     upiId: document.getElementById('upiId').value.trim()
-                }
+                },
+                kycStatus: 'pending'  // Submit as pending for admin approval
             };
 
             // Validation
@@ -782,23 +747,8 @@
 
             document.getElementById('loadingOverlay').classList.add('active');
 
-            // Submit to Firebase
-            const updateData = {
-                ...data,
-                verificationStatus: 'pending',
-                submittedAt: firebase.database.ServerValue.TIMESTAMP,
-                id: partner.id,
-                category: partner.category,
-                rating: partner.rating || 5.0,
-                earnings: partner.earnings || 0,
-                jobsCompleted: partner.jobsCompleted || 0,
-                totalEarned: partner.totalEarned || 0,
-                commissionPaid: partner.commissionPaid || 0
-            };
-
-            db.ref('partners/' + partner.id).update(updateData).then(() => {
-                // Update local storage
-                partner = {...partner, ...updateData};
+            db.ref('partners/' + partner.id).update(data).then(() => {
+                partner = {...partner, ...data};
                 localStorage.setItem('partnerData', JSON.stringify(partner));
                 
                 document.getElementById('loadingOverlay').classList.remove('active');
@@ -813,6 +763,17 @@
                 showModal('Error', err.message, 'error');
             });
         }
+
+        // Real-time listener for kycStatus
+        db.ref('partners/' + partner.id + '/kycStatus').on('value', (snapshot) => {
+            const status = (snapshot.val() || '').toString().trim();
+            if(status === 'verified' && partner.kycStatus !== 'verified') {
+                partner.kycStatus = 'verified';
+                localStorage.setItem('partnerData', JSON.stringify(partner));
+                showModal('Verified!', 'Your profile has been verified! Page will refresh.', 'success');
+                setTimeout(() => location.reload(), 2000);
+            }
+        });
 
         // Modal Functions
         function showModal(title, text, type) {
@@ -833,27 +794,6 @@
             document.getElementById('customModal').classList.remove('active');
         }
 
-        // Real-time listener for verification status
-        db.ref('partners/' + partner.id + '/verificationStatus').on('value', (snapshot) => {
-            const status = snapshot.val();
-            if(status === 'verified' && partner.verificationStatus !== 'verified') {
-                // Status changed to verified - update local and refresh
-                partner.verificationStatus = 'verified';
-                localStorage.setItem('partnerData', JSON.stringify(partner));
-                showModal('Verified!', 'Your profile has been verified! Page will refresh.', 'success');
-                setTimeout(() => location.reload(), 2000);
-            } else if(status === 'rejected' && partner.verificationStatus !== 'rejected') {
-                partner.verificationStatus = 'rejected';
-                db.ref('partners/' + partner.id + '/rejectionReason').once('value').then(snap => {
-                    partner.rejectionReason = snap.val();
-                    localStorage.setItem('partnerData', JSON.stringify(partner));
-                    showModal('Rejected', 'Your profile was rejected. Please check details.', 'error');
-                    setTimeout(() => location.reload(), 2000);
-                });
-            }
-        });
-
-        // Close modal on backdrop click
         document.getElementById('customModal').addEventListener('click', function(e) {
             if(e.target === this) closeModal();
         });
