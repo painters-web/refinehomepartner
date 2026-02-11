@@ -608,7 +608,31 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+            // ... Firebase Config aur Initialize hone ke baad ...
+    const db = firebase.database();
+
+    let partner = JSON.parse(localStorage.getItem('partnerData'));
+    if(!partner) window.location.href = 'partner-index.html';
+
+    // 👇 YEH NAYA CODE ADD KAREIN (Real-time Status Check) 👇
+    db.ref('partners/' + partner.id).on('value', (snapshot) => {
+        const freshData = snapshot.val();
+        if (freshData) {
+            // Agar status badal gaya hai (Verified ho gaya), to Local Storage update karo
+            if (freshData.kycStatus !== partner.kycStatus) {
+                console.log("Status Updated: ", freshData.kycStatus);
+                localStorage.setItem('partnerData', JSON.stringify(freshData));
+                partner = freshData;
+                
+                // Screen Refresh karo taaki naya status dikhe
+                location.reload(); 
+            }
+        }
+    });
+    // 👆 YAHAN TAK ADD KAREIN 👆
+
+    // ... Baaki purana code same rahega ...
+        
 
         let partner = JSON.parse(localStorage.getItem('partnerData'));
         if(!partner) window.location.href = 'partner-index.html';
