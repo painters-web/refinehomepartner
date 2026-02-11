@@ -113,17 +113,12 @@
             if (!user) { window.location.href = 'index.html'; return; }
             currentUser = user;
             
-            // 1. Partner ki Category Pata Karo (E.g., "painting", "electrician")
             const pSnap = await db.ref(`partners/${user.uid}`).once('value');
             if(pSnap.val()) {
-                // Category ko small letters mein convert kar lo taaki matching aasaan ho
                 myCategory = (pSnap.val().category || "all").toLowerCase();
-                
-                // Upar Header mein dikhao ki ye banda kaun hai
                 document.getElementById('catDisplay').textContent = myCategory.toUpperCase() + " PARTNER";
             }
             
-            // 2. Sirf Is Category ki leads dhoondo
             loadLeadsFromUsers();
         });
 
@@ -132,33 +127,84 @@
                 const users = snapshot.val() || {};
                 let allLeads = [];
 
+                // YAHAN HAI MAGIC: Har category ke liye keywords ki list
+                // Agar painting wala hai to in sab words ko dhoondhega
+                const categoryKeywords = {
+                    'const categoryKeywords = {
+    'painting': [
+        // Brands
+        'asian', 'berger', 'dulux', 'nerolac', 'paint', 
+        // Asian Paints Products
+        'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 'matt', 'aspira', 'glitz', 
+        'ace', 'apex', 'weatherproof', 'ultima', 'protek', 
+        // Berger Products
+        'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
+        // Dulux Products
+        'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
+        // Nerolac Products
+        'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
+        // General Terms
+        'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior'
+        // Dr Fixit & Brands
+        'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 'smartcare', 'homeshield', 'seal-o-prime',
+        // Services
+        'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'wall dampness', 'tank', 'coating', 'crack filling'
+    ],
+
+    'electrician': [
+        'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
+        'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
+    ],
+
+    'plumber': [
+        'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
+        'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
+    ],
+
+    'ac': [
+        'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
+        'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
+    ],
+
+    'cleaning': [
+        'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
+        'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
+    ],
+
+    'carpenter': [
+        'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
+        'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
+    ],
+
+    'pest': [
+        'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
+        'control', 'insect', 'spray', 'herbal', 'ant'
+    ]
+};
+
+
                 Object.keys(users).forEach(userId => {
                     const userData = users[userId];
                     if (userData.orders) {
                         Object.keys(userData.orders).forEach(orderId => {
                             const order = userData.orders[orderId];
                             
-                            // --- STRICT FILTER LOGIC ---
-                            
-                            // 1. Status Check: Sirf nayi leads
                             const isNew = order.status === 'pending' || order.status === 'new';
-                            
-                            // 2. Category Check: (YE HAI MAIN CHEEZ)
-                            // Order ki service ka naam (e.g., "Home Painting")
                             const serviceName = (order.service || "").toLowerCase();
                             
-                            // Check karo: Kya service name mein partner ki category chhupee hai?
-                            // Example: Agar partner 'painter' hai, to 'painting' word match karega
+                            // MATCHING LOGIC
                             let isMatch = false;
                             
                             if (myCategory === 'all') {
                                 isMatch = true;
-                            } else if (serviceName.includes(myCategory)) {
-                                isMatch = true; 
-                            } 
-                            // Special Case: Agar 'ac' category hai to 'ac repair' match hona chahiye
-                            else if (myCategory === 'ac' && serviceName.includes('ac')) {
-                                isMatch = true;
+                            } else {
+                                // Apni category ke keywords nikaalo
+                                const myKeywords = categoryKeywords[myCategory] || [myCategory];
+                                
+                                // Check karo ki service name mein koi bhi keyword match ho raha hai kya
+                                if (myKeywords.some(keyword => serviceName.includes(keyword))) {
+                                    isMatch = true;
+                                }
                             }
 
                             if (isNew && isMatch) {
@@ -184,8 +230,8 @@
                     <div class="loading-state">
                         <i class="fa-solid fa-filter" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
                         <h3>No matching jobs</h3>
-                        <p>Scanning for <strong>${myCategory.toUpperCase()}</strong> jobs only...</p>
-                        <p style="font-size:0.8rem; margin-top:10px; color:#ef4444;">(Other category leads are hidden)</p>
+                        <p>Scanning for <strong>${myCategory.toUpperCase()}</strong> related jobs...</p>
+                        <p style="font-size:0.8rem; margin-top:10px; color:#ef4444;">(Filtered by service name)</p>
                     </div>`;
                 return;
             }
@@ -225,7 +271,6 @@
                 const pNameSnap = await db.ref(`partners/${currentUser.uid}/name`).once('value');
                 const partnerName = pNameSnap.val() || "RefineHome Partner";
 
-                // Seedha Customer ke folder mein status update
                 await db.ref(`users/${customerId}/orders/${orderId}`).update({
                     status: 'assigned',
                     partnerId: currentUser.uid,
