@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reviews - RefineHome Partner</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        body {
+            background: #f0fdfa;
+            min-height: 100vh;
+            padding-bottom: 90px;
+            color: #134e4a;
+        }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(13, 148, 136, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0D9488;
+        }
+        
+        .content {
+            margin-top: 90px;
+            padding: 0 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Empty State - When No Reviews */
+        .empty-reviews {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 24px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            background: #f0fdfa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 3rem;
+            color: #0D9488;
+            opacity: 0.5;
+        }
+        
+        .empty-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 10px;
+        }
+        
+        .empty-text {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        /* Live Rating Hero */
+        .rating-hero {
+            background: linear-gradient(135deg, #0D9488 0%, #14B8A6 50%, #2dd4bf 100%);
+            border-radius: 30px;
+            padding: 40px 25px;
+            color: white;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 20px 40px rgba(13, 148, 136, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .rating-hero.no-reviews {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+            box-shadow: 0 20px 40px rgba(100, 116, 139, 0.3);
+        }
+        
+        .rating-big {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .rating-stars {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            letter-spacing: 8px;
+        }
+        
+        .rating-text {
+            opacity: 0.95;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        /* Pending Reviews Section */
+        .pending-section {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px solid #f59e0b;
+        }
+        
+        .pending-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            color: #92400e;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .pending-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .pending-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .pending-info h4 {
+            color: #0f172a;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        
+        .pending-info p {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        .pending-status {
+            background: #f59e0b;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(13, 148, 136, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        /* Breakdown */
+        .breakdown-card {
+            background: white;
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .breakdown-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .breakdown-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .breakdown-label {
+            width: 60px;
+            font-weight: 700;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        
+        .breakdown-bar {
+            flex: 1;
+            height: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .breakdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0D9488, #14B8A6);
+            border-radius: 6px;
+            transition: width 1s ease;
+        }
+        
+        .breakdown-count {
+            width: 30px;
+            text-align: right;
+            font-weight: 700;
+            color: #64748b;
+        }
+        
+        /* Filter */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .filter-tab {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .filter-tab.active {
+            background: #0D9488;
+            color: white;
+            border-color: #0D9488;
+        }
+        
+        /* Real Review Cards */
+        .review-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid #0D9488;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        .review-card.rating-5 { border-left-color: #22c55e; }
+        .review-card.rating-4 { border-left-color: #3b82f6; }
+        .review-card.rating-3 { border-left-color: #f59e0b; }
+        .review-card.rating-2 { border-left-color: #f97316; }
+        .review-card.rating-1 { border-left-color: #ef4444; }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .reviewer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0D9488, #14B8A6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .reviewer-details h4 {
+            color: #0f172a;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        
+        .review-date {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        .review-rating {
+            display: flex;
+            gap: 3px;
+            color: #f59e0b;
+            font-size: 1.1rem;
+        }
+        
+        .review-content {
+            color: #334155;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            font-style: italic;
+        }
+        
+        .review-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #64748b;
+            align-items: center;
+        }
+        
+        .verified-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #22c55e;
+            font-weight: 600;
+            background: #f0fdf4;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        
+        .service-tag {
+            background: #f0fdfa;
+            color: #0D9488;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(13, 148, 136, 0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 20px;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: all 0.3s;
+            border-radius: 12px;
+            margin: 0 5px;
+        }
+        
+        .nav-item.active {
+            color: #0D9488;
+            background: rgba(13, 148, 136, 0.1);
+        }
+        
+        .nav-item i {
+            font-size: 1.4rem;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 10000;
+        }
+        
+        .toast {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s;
+            border-left: 4px solid #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #0D9488;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <header class="header">My Reviews</header>
+    
+    <div class="content" id="content">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading your reviews...</p>
+        </div>
+    </div>
+    
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="earnings.html" class="nav-item">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Earnings</span>
+        </a>
+        <a href="reviews.html" class="nav-item active">
+            <i class="fa-solid fa-star"></i>
+            <span>Reviews</span>
+        </a>
+        <a href="kyc.html" class="nav-item">
+            <i class="fa-solid fa-id-card"></i>
+            <span>KYC</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        
+        let currentUser = null;
+        let partnerData = null;
+        let currentFilter = 'all';
+        let realReviews = [];
+        let pendingReviews = [];
+        
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            await loadPartnerData();
+            loadRealReviews();
+            loadPendingReviews();
+        });
+        
+        async function loadPartnerData() {
+            const snapshot = await db.ref(`partners/${currentUser.uid}`).once('value');
+            partnerData = snapshot.val() || {};
+        }
+        
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fa-solid fa-info-circle" style="color: #0D9488;"></i> <span style="font-weight: 600;">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // Load REAL reviews from customers only
+        async function loadRealReviews() {
+            try {
+                // Fetch from reviews node where customers actually submitted ratings
+                const reviewsRef = db.ref(`reviews/${currentUser.uid}`);
+                
+                reviewsRef.on('value', snapshot => {
+                    const reviewsData = snapshot.val();
+                    realReviews = [];
+                    
+                    if (reviewsData) {
+                        Object.entries(reviewsData).forEach(([key, review]) => {
+                            // Only add if it's a real review with actual customer data
+                            if (review.rating && review.customerName && review.timestamp) {
+                                realReviews.push({
+                                    id: key,
+                                    ...review,
+                                    date: review.timestamp
+                                });
+                            }
+                        });
+                        
+                        // Sort by newest first
+                        realReviews.sort((a, b) => b.date - a.date);
+                    }
+                    
+                    renderContent();
+                });
+            } catch (error) {
+                console.error("Error loading reviews:", error);
+                showToast("Error loading reviews");
+            }
+        }
+        
+        // Load completed jobs that are waiting for customer rating (pending reviews)
+        async function loadPendingReviews() {
+            const category = partnerData?.category || 'painting';
+            const leadsRef = db.ref(`leads/${category}`);
+            
+            leadsRef.orderByChild('partnerId').equalTo(currentUser.uid).on('value', snapshot => {
+                pendingReviews = [];
+                const leads = snapshot.val() || {};
+                
+                Object.entries(leads).forEach(([leadId, lead]) => {
+                    // Job completed but no review yet (within last 7 days)
+                    if (lead.status === 'completed' && lead.completedAt) {
+                        const daysSinceCompletion = (Date.now() - lead.completedAt) / (1000 * 60 * 60 * 24);
+                        
+                        // Check if review exists for this job
+                        const hasReview = realReviews.some(r => r.jobId === leadId);
+                        
+                        if (!hasReview && daysSinceCompletion < 7) {
+                            pendingReviews.push({
+                                jobId: leadId,
+                                service: lead.service,
+                                customerName: lead.customer?.name || 'Customer',
+                                date: lead.completedAt
+                            });
+                        }
+                    }
+                });
+                
+                renderContent();
+            });
+        }
+        
+        function calculateStats() {
+            const total = realReviews.length;
+            if (total === 0) return { average: 0, total: 0, breakdown: [0,0,0,0,0] };
+            
+            const sum = realReviews.reduce((acc, r) => acc + (parseInt(r.rating) || 0), 0);
+            const average = (sum / total).toFixed(1);
+            
+            const breakdown = [0, 0, 0, 0, 0]; // 5,4,3,2,1
+            realReviews.forEach(r => {
+                const rating = parseInt(r.rating);
+                if (rating >= 1 && rating <= 5) {
+                    breakdown[5 - rating]++;
+                }
+            });
+            
+            return { average, total, breakdown };
+        }
+        
+        function renderContent() {
+            const container = document.getElementById('content');
+            const stats = calculateStats();
+            const hasReviews = realReviews.length > 0;
+            
+            let html = '';
+            
+            // If no reviews at all
+            if (!hasReviews && pendingReviews.length === 0) {
+                html += `
+                    <div class="empty-reviews">
+                        <div class="empty-icon">
+                            <i class="fa-regular fa-star"></i>
+                        </div>
+                        <div class="empty-title">No Reviews Yet</div>
+                        <div class="empty-text">
+                            Complete your first job and ask customers to rate your service.<br>
+                            Ratings appear here automatically when customers submit them.
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Rating Hero - Only show if has reviews
+                if (hasReviews) {
+                    html += `
+                        <div class="rating-hero">
+                            <div class="rating-big">${stats.average}</div>
+                            <div class="rating-stars">
+                                ${generateStars(Math.round(stats.average))}
+                            </div>
+                            <div class="rating-text">${stats.total} genuine customer review${stats.total !== 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="rating-hero no-reviews">
+                            <div class="rating-big">-</div>
+                            <div class="rating-text">Waiting for first review</div>
+                        </div>
+                    `;
+                }
+                
+                // Pending Reviews Section (Jobs completed waiting for rating)
+                if (pendingReviews.length > 0) {
+                    html += `
+                        <div class="pending-section">
+                            <div class="pending-header">
+                                <i class="fa-solid fa-clock"></i>
+                                Pending Reviews (${pendingReviews.length})
+                            </div>
+                            <div class="pending-list">
+                                ${pendingReviews.map(job => `
+                                    <div class="pending-item">
+                                        <div class="pending-info">
+                                            <h4>${job.service}</h4>
+                                            <p>${job.customerName} • ${new Date(job.date).toLocaleDateString()}</p>
+                                        </div>
+                                        <span class="pending-status">Awaiting Rating</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Stats Grid
+                html += `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.total}</div>
+                            <div class="stat-label">Total Reviews</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: #22c55e;">${stats.breakdown[0]}</div>
+                            <div class="stat-label">5 Star</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${pendingReviews.length}</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Rating Breakdown (only if has reviews)
+                if (hasReviews) {
+                    html += `
+                        <div class="breakdown-card">
+                            <div class="breakdown-title">
+                                <i class="fa-solid fa-chart-simple" style="color: #0D9488;"></i>
+                                Rating Breakdown
+                            </div>
+                            ${[5, 4, 3, 2, 1].map((star, index) => {
+                                const count = stats.breakdown[index];
+                                const percentage = stats.total > 0 ? (count / stats.total * 100) : 0;
+                                return `
+                                    <div class="breakdown-row">
+                                        <div class="breakdown-label">
+                                            ${star} <i class="fa-solid fa-star" style="font-size: 0.7rem; color: #f59e0b;"></i>
+                                        </div>
+                                        <div class="breakdown-bar">
+                                            <div class="breakdown-fill" style="width: ${percentage}%"></div>
+                                        </div>
+                                        <div class="breakdown-count">${count}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    
+                    // Filter Tabs
+                    html += `
+                        <div class="filter-tabs">
+                            <button class="filter-tab ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">
+                                All (${stats.total})
+                            </button>
+                            <button class="filter-tab ${currentFilter === '5' ? 'active' : ''}" onclick="setFilter('5')">
+                                5 ★
+                            </button>
+                            <button class="filter-tab ${currentFilter === '4' ? 'active' : ''}" onclick="setFilter('4')">
+                                4 ★
+                            </button>
+                            <button class="filter-tab ${currentFilter === '3' ? 'active' : ''}" onclick="setFilter('3')">
+                                3 ★
+                            </button>
+                            <button class="filter-tab ${currentFilter === '2' ? 'active' : ''}" onclick="setFilter('2')">
+                                2 ★
+                            </button>
+                            <button class="filter-tab ${currentFilter === '1' ? 'active' : ''}" onclick="setFilter('1')">
+                                1 ★
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Filtered Reviews List
+                    let filteredReviews = realReviews;
+                    if (currentFilter !== 'all') {
+                        filteredReviews = realReviews.filter(r => r.rating == currentFilter);
+                    }
+                    
+                    if (filteredReviews.length === 0) {
+                        html += `
+                            <div class="empty-reviews" style="padding: 40px;">
+                                <div class="empty-text">No ${currentFilter} star reviews yet</div>
+                            </div>
+                        `;
+                    } else {
+                        filteredReviews.forEach(review => {
+                            html += createReviewCard(review);
+                        });
+                    }
+                }
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function createReviewCard(review) {
+            const date = new Date(review.date).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+            
+            const initial = review.customerName ? review.customerName.charAt(0).toUpperCase() : 'C';
+            const rating = parseInt(review.rating) || 0;
+            
+            return `
+                <div class="review-card rating-${rating}">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">${initial}</div>
+                            <div class="reviewer-details">
+                                <h4>${review.customerName || 'Anonymous'}</h4>
+                                <div class="review-date">${date}</div>
+                            </div>
+                        </div>
+                        <div class="review-rating">
+                            ${Array(5).fill(0).map((_, i) => 
+                                `<i class="${i < rating ? 'fa-solid' : 'fa-regular'} fa-star"></i>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    ${review.comment ? `
+                        <div class="review-content">
+                            "${review.comment}"
+                        </div>
+                    ` : ''}
+                    <div class="review-meta">
+                        <span class="verified-badge">
+                            <i class="fa-solid fa-check-circle"></i> Verified Customer
+                        </span>
+                        ${review.service ? `<span class="service-tag">${review.service}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateStars(count) {
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += i < count ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+            }
+            return stars;
+        }
+        
+        function setFilter(filter) {
+            currentFilter = filter;
+            renderContent();
+        }
+    </script>
+</body>
+</html>
