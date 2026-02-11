@@ -612,49 +612,46 @@
         }
         
         async function submitKYC() {
-            const data = {
-                name: document.getElementById('kycName').value,
-                aadhar: document.getElementById('kycAadhar').value,
-                pan: document.getElementById('kycPan').value.toUpperCase(),
-                bankDetails: {
-                    name: document.getElementById('bankName').value,
-                    account: document.getElementById('bankAccount').value,
-                    ifsc: document.getElementById('bankIfsc').value.toUpperCase(),
-                    upi: document.getElementById('upiId').value
-                },
-                status: 'pending',
-                submittedAt: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            if (!data.name || !data.aadhar || !data.pan || !data.bankDetails.name || !data.bankDetails.account) {
-                showToast('Please fill all required fields', 'error');
-                return;
-            }
-            
-            document.getElementById('loadingOverlay').classList.add('active');
-            
-            try {
-                // Upload files if selected
-                const uploadPromises = Object.entries(uploadedFiles).map(async ([type, file]) => {
-                    const path = `kyc/${currentUser.uid}/${type}_${Date.now()}.jpg`;
-                    const ref = storage.ref(path);
-                    await ref.put(file);
-                    const url = await ref.getDownloadURL();
-                    data[type] = url;
-                });
-                
-                await Promise.all(uploadPromises);
-                await db.ref(`partners/${currentUser.uid}/kyc`).update(data);
-                await db.ref(`partners/${currentUser.uid}/kycStatus`).set('pending');
-                
-                document.getElementById('loadingOverlay').classList.remove('active');
-                showToast('KYC submitted successfully!', 'success');
-                setTimeout(() => loadKYCData(), 1500);
-            } catch (error) {
-                document.getElementById('loadingOverlay').classList.remove('active');
-                showToast('Error: ' + error.message, 'error');
-            }
-        }
+    // 1. Form data collect karein
+    const data = {
+        name: document.getElementById('kycName').value,
+        aadhar: document.getElementById('kycAadhar').value,
+        pan: document.getElementById('kycPan').value.toUpperCase(),
+        bankDetails: {
+            name: document.getElementById('bankName').value,
+            account: document.getElementById('bankAccount').value,
+            ifsc: document.getElementById('bankIfsc').value.toUpperCase(),
+            upi: document.getElementById('upiId').value
+        },
+        status: 'pending',
+        submittedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    
+    // 2. Basic Validation (sirf text fields ke liye)
+    if (!data.name || !data.aadhar || !data.pan || !data.bankDetails.name || !data.bankDetails.account) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+    
+    document.getElementById('loadingOverlay').classList.add('active');
+    document.querySelector('#loadingOverlay p').textContent = "Submitting details...";
+
+    try {
+        // 3. Seedha Database mein update karein (Storage upload skip kar diya)
+        await db.ref(`partners/${currentUser.uid}/kyc`).update(data);
+        await db.ref(`partners/${currentUser.uid}/kycStatus`).set('pending');
+        
+        document.getElementById('loadingOverlay').classList.remove('active');
+        showToast('KYC details submitted successfully!', 'success');
+        
+        // Refresh page to show pending status
+        setTimeout(() => loadKYCData(), 1500);
+    } catch (error) {
+        document.getElementById('loadingOverlay').classList.remove('active');
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
     </script>
 </body>
 </html>
