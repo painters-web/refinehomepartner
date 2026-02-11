@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | UrbanPaintPro</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F1F5F9; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
+        .pending { border-left-color: #F59E0B; }
+        .verified { border-left-color: #10B981; }
+        
+        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; border: none; font-weight: 700; color: white; margin-left: 10px; }
+        .btn-approve { background: #10B981; }
+        .btn-reject { background: #EF4444; }
+        
+        .doc-link { color: #0D9488; text-decoration: underline; margin-right: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Admin Approval Panel</h1>
+    <div id="partnersList">Loading...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('partners').on('value', snap => {
+            const list = document.getElementById('partnersList');
+            list.innerHTML = '';
+            
+            snap.forEach(child => {
+                const p = child.val();
+                const id = child.key;
+                
+                // Sirf unhe dikhao jo verified NAHI hain (optional)
+                // Ya sabko dikhao status ke sath
+                
+                const isPending = p.kycStatus === 'pending';
+                
+                list.innerHTML += `
+                    <div class="card ${p.kycStatus}">
+                        <div>
+                            <h3>${p.name} (${p.category})</h3>
+                            <p>Status: <strong>${p.kycStatus.toUpperCase()}</strong></p>
+                            <div style="margin-top:5px;">
+                                <a class="doc-link" href="${p.aadharUrl}" target="_blank">View Aadhar</a>
+                                <a class="doc-link" href="${p.panUrl}" target="_blank">View PAN</a>
+                            </div>
+                        </div>
+                        <div>
+                            ${isPending ? `
+                            <button class="btn btn-approve" onclick="updateStatus('${id}', 'verified')">Approve</button>
+                            <button class="btn btn-reject" onclick="updateStatus('${id}', 'rejected')">Reject</button>
+                            ` : `
+                            <button class="btn" style="background:#cbd5e1; color:#475569;" disabled>Done</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        function updateStatus(id, status) {
+            if(confirm(`Mark this partner as ${status}?`)) {
+                db.ref('partners/' + id).update({ kycStatus: status });
+            }
+        }
+    </script>
+</body>
+</html>
