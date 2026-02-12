@@ -132,16 +132,58 @@
     </div>
 
     <script>
-        // CATEGORY KEYWORDS (Same as before)
-        const categoryKeywords = {
-            'painting': ['paint','asian','berger','dulux','waterproof','leak','damp','seepage','terrace','roof','dr fixit','emulsion','primer','wall','texture'],
-            'electrician': ['electric','fan','switch','wiring','mcb'],
-            'plumber': ['plumb','tap','pipe','sink','toilet','drain'],
-            'ac': ['ac','air condition','split','gas','cooling'],
-            'cleaning': ['clean','sofa','carpet','bathroom','kitchen'],
-            'carpenter': ['carpen','wood','door','furniture','bed'],
-            'pest': ['pest','cockroach','termite','control']
-        };
+       const categoryKeywords = {
+    // AB PAINTING MEIN HI SAB KUCH HAI (Paints + Waterproofing)
+    'painting': [
+        // --- PAINT BRANDS & PRODUCTS ---
+          'site', 'visit', 'Consultation', 'asian', 'berger', 'dulux', 'nerolac', 'paint', 
+        'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 'matt', 'aspira', 'glitz', 
+        'ace', 'apex', 'weatherproof', 'ultima', 'protek', 
+        'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
+        'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
+        'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
+        
+        // --- GENERAL PAINT TERMS ---
+        'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior',
+
+        // --- WATERPROOFING KEYWORDS (Jo Painter ko dikhenge) ---
+        'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
+        'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 
+        'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
+    ],
+
+    // --- OTHER CATEGORIES ---
+
+    'electrician': [
+        'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
+        'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
+    ],
+
+    'plumber': [
+        'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
+        'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
+    ],
+
+    'ac': [
+        'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
+        'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
+    ],
+
+    'cleaning': [
+        'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
+        'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
+    ],
+
+    'carpenter': [
+        'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
+        'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
+    ],
+
+    'pest': [
+        'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
+        'control', 'insect', 'spray', 'herbal', 'ant'
+    ]
+};
 
         function detectCategory(serviceText) {
             if (!serviceText) return 'other';
