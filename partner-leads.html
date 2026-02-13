@@ -341,149 +341,7 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <script>
-        // Firebase Config
-        const firebaseConfig = {
-            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
-            authDomain: "urban-paint-pro.firebaseapp.com",
-            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "urban-paint-pro",
-            storageBucket: "urban-paint-pro.firebasestorage.app",
-            messagingSenderId: "929763117480",
-            appId: "1:929763117480:web:560057baeb12672078b59d"
-        };
-        
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        let currentFilter = 'all';
-        let selectedLead = null;
-        let selectedLeadId = null;
-        let partnerId = null;
-
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                partnerId = user.uid;
-                loadLeads();
-            } else {
-                window.location.href = 'partner-login.html';
-            }
-        });
-
-        function loadLeads() {
-            const leadsRef = db.ref('leads').orderByChild('status').equalTo('new');
-            
-            leadsRef.on('value', (snapshot) => {
-                const leads = snapshot.val() || {};
-                renderLeads(leads);
-            });
-        }
-
-        function renderLeads(leads) {
-            const list = document.getElementById('leadsList');
-            let filteredLeads = Object.entries(leads);
-            
-            if (currentFilter !== 'all') {
-                filteredLeads = filteredLeads.filter(([id, lead]) => 
-                    lead.category === currentFilter
-                );
-            }
-
-            if (filteredLeads.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon"><i class="fa-solid fa-inbox" style="color: #CBD5E1;"></i></div>
-                        <h3 style="color: #64748B; margin-bottom: 8px;">No leads available</h3>
-                        <p style="font-size: 0.9rem;">Check back later for new opportunities</p>
-                    </div>
-                `;
-                return;
-            }
-
-            list.innerHTML = filteredLeads.map(([id, lead]) => {
-                const urgency = lead.urgency || 'medium';
-                const urgencyLabels = { high: 'High Priority', medium: 'Medium', low: 'Flexible' };
-                
-                return `
-                    <div class="lead-card" onclick="showLeadDetail('${id}')">
-                        <div class="lead-header">
-                            <span class="lead-type">
-                                <i class="fa-solid ${getCategoryIcon(lead.category)}"></i>
-                                ${lead.category || 'Service'}
-                            </span>
-                            <span class="lead-urgency urgency-${urgency}">
-                                <i class="fa-solid fa-clock"></i> ${urgencyLabels[urgency]}
-                            </span>
-                        </div>
-                        <div class="lead-title">${lead.service || 'Home Service'}</div>
-                        <div class="lead-details">
-                            <div class="detail-item">
-                                <i class="fa-solid fa-calendar"></i>
-                                ${lead.preferredDate || 'Flexible'}
-                            </div>
-                            <div class="detail-item">
-                                <i class="fa-solid fa-clock"></i>
-                                ${lead.preferredTime || 'Anytime'}
-                            </div>
-                            <div class="detail-item">
-                                <i class="fa-solid fa-ruler-combined"></i>
-                                ${lead.area || 'Area N/A'}
-                            </div>
-                        </div>
-                        <div class="lead-location">
-                            <i class="fa-solid fa-location-dot"></i>
-                            <span>${lead.address || 'Address not provided'}</span>
-                        </div>
-                        <div class="lead-footer">
-                            <div class="lead-price">
-                                ₹${(lead.budget || 0).toLocaleString()}
-                                <small>estimated</small>
-                            </div>
-                            <div class="action-btns">
-                                <button class="btn-reject" onclick="event.stopPropagation(); rejectLead('${id}')">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                                <button class="btn-accept" onclick="event.stopPropagation(); showLeadDetail('${id}')">
-                                    <i class="fa-solid fa-check"></i> Accept
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function getCategoryIcon(category) {
-            const icons = {
-                painting: 'fa-paint-roller',
-                waterproofing: 'fa-cloud-showers-heavy',
-                ac: 'fa-snowflake',
-                plumbing: 'fa-faucet-drip',
-                electrician: 'fa-bolt',
-                carpenter: 'fa-hammer',
-                cleaning: 'fa-broom',
-                pest: 'fa-bug'
-            };
-            return icons[category] || 'fa-tools';
-        }
-
-        function filterLeads(category, btn) {
-            currentFilter = category;
-            document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-            loadLeads();
-        }
-
-        function showLeadDetail(leadId) {
-            db.ref('leads/' + leadId).once('value').then((snapshot) => {
-                const lead = snapshot.val();
-                if (!lead) return;
-                
-                selectedLead = lead;
-                selectedLeadId = leadId;
-                
-                document.getElementById('modalTitle').textContent = lead.service || 'Service Request';
+                    document.getElementById('modalTitle').textContent = lead.service || 'Service Request';
                 document.getElementById('modalBody').innerHTML = `
                     <div class="detail-row">
                         <span class="detail-label">Service Type</span>
@@ -537,88 +395,249 @@
                     </div>
                 `;
                 
-                document.getElementById('leadModal').classList.add('active');
+                <script>
+    // --- 1. FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+        authDomain: "urban-paint-pro.firebaseapp.com",
+        databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        projectId: "urban-paint-pro",
+        storageBucket: "urban-paint-pro.firebasestorage.app",
+        messagingSenderId: "929763117480",
+        appId: "1:929763117480:web:560057baeb12672078b59d"
+    };
+    
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // --- 2. COST KEYWORDS (EXACT JO AAPNE DIYE) ---
+    const categoryKeywords = {
+        // PAINTING + WATERPROOFING COMBINED
+        'painting': [
+            // BRANDS
+            'asian', 'berger', 'dulux', 'nerolac', 'paint', 
+            'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 'matt', 'aspira', 'glitz', 
+            'ace', 'apex', 'weatherproof', 'ultima', 'protek', 
+            'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
+            'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
+            'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
+            
+            // GENERAL TERMS
+            'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior',
+
+            // WATERPROOFING TERMS
+            'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
+            'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 
+            'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
+        ],
+
+        'electrician': [
+            'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
+            'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
+        ],
+
+        'plumber': [
+            'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
+            'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
+        ],
+
+        'ac': [
+            'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
+            'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
+        ],
+
+        'cleaning': [
+            'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
+            'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
+        ],
+
+        'carpenter': [
+            'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
+            'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
+        ],
+
+        'pest': [
+            'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
+            'control', 'insect', 'spray', 'herbal', 'ant'
+        ]
+    };
+
+    let currentPartnerId = null;
+    let partnerCategory = null;
+    let selectedLeadId = null;
+    let selectedLeadData = null;
+
+    // --- 3. AUTH & PROFILE LOAD ---
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentPartnerId = user.uid;
+            
+            // Partner ka category check karo
+            db.ref(`partners/${user.uid}`).once('value').then(snap => {
+                const profile = snap.val();
+                if(profile && profile.category) {
+                    partnerCategory = profile.category.toLowerCase();
+                    console.log("Partner Category:", partnerCategory);
+                    loadLeadsDirectlyFromOrders(); // Leads load karo
+                } else {
+                    document.getElementById('leadsList').innerHTML = '<div class="empty-state"><p>Profile Category Missing</p></div>';
+                }
             });
+        } else {
+            window.location.href = 'partner-login.html';
         }
+    });
 
-        function closeModal() {
-            document.getElementById('leadModal').classList.remove('active');
-        }
+    // --- 4. LOAD LEADS (DIRECT FROM ORDERS) ---
+    function loadLeadsDirectlyFromOrders() {
+        // Hum seedha 'orders' table read kar rahe hain jahan status 'pending' hai
+        db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
+            const orders = snapshot.val() || {};
+            renderFilteredLeads(orders);
+        });
+    }
 
-        function acceptLead() {
-            if (!selectedLead || !selectedLeadId) return;
-            
-            const updates = {
-                status: 'accepted',
-                partnerId: partnerId,
-                acceptedAt: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            // Move to partner jobs
-            const jobData = {
-                ...selectedLead,
-                ...updates,
-                jobId: selectedLeadId,
-                startOtp: Math.floor(1000 + Math.random() * 9000)
-            };
-            
-            db.ref('partnerJobs/' + partnerId + '/' + selectedLeadId).set(jobData)
-                .then(() => db.ref('leads/' + selectedLeadId).remove())
-                .then(() => {
-                    showToast('Lead accepted successfully!', 'success');
-                    closeModal();
-                    loadLeads();
-                })
-                .catch((error) => {
-                    showToast('Error accepting lead: ' + error.message, 'error');
-                });
-        }
+    // --- 5. SMART FILTERING LOGIC ---
+    function renderFilteredLeads(orders) {
+        const list = document.getElementById('leadsList');
+        const orderEntries = Object.entries(orders).reverse(); // Newest first
 
-        function rejectLead(leadId) {
-            if (!confirm('Are you sure you want to reject this lead?')) return;
-            
-            db.ref('leads/' + leadId).update({
-                status: 'rejected',
-                rejectedBy: partnerId,
-                rejectedAt: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                showToast('Lead rejected', 'success');
-                loadLeads();
-            });
-        }
+        let hasLeads = false;
+        let html = '';
 
-        function showFilter() {
-            showToast('Filter options coming soon!', 'info');
-        }
+        orderEntries.forEach(([orderId, order]) => {
+            // Check agar order service name humare keywords se match karta hai
+            const isRelevant = checkServiceRelevance(order.service);
 
-        // Toast
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icons = {
-                success: 'fa-circle-check',
-                error: 'fa-circle-xmark',
-                warning: 'fa-triangle-exclamation',
-                info: 'fa-circle-info'
-            };
-            
-            toast.innerHTML = `
-                <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
-                <div>
-                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">${type === 'success' ? 'Success!' : 'Info'}</div>
-                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
+            if (isRelevant) {
+                hasLeads = true;
+                
+                // Urgency Logic (Optional)
+                let urgency = 'medium';
+                if(order.service.toLowerCase().includes('leak') || order.service.toLowerCase().includes('fault')) {
+                    urgency = 'high';
+                }
+
+                html += `
+                    <div class="lead-card" onclick="openLeadModal('${orderId}')">
+                        <div class="lead-header">
+                            <span class="lead-type">
+                                <i class="fa-solid fa-briefcase"></i> ${partnerCategory.toUpperCase()} LEAD
+                            </span>
+                            <span class="lead-urgency urgency-${urgency}">
+                                ${urgency === 'high' ? 'Urgent' : 'New'}
+                            </span>
+                        </div>
+                        
+                        <div class="lead-title">${order.service}</div>
+                        
+                        <div class="lead-details">
+                            <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${order.slot?.date || 'Date N/A'}</div>
+                            <div class="detail-item"><i class="fa-solid fa-clock"></i> ${order.slot?.time || 'Time N/A'}</div>
+                            <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Area N/A'}</div>
+                        </div>
+
+                        <div class="lead-footer">
+                            <div class="lead-price">₹${(order.total || 0).toLocaleString()}</div>
+                            <div class="action-btns">
+                                <button class="btn-accept" onclick="event.stopPropagation(); acceptOrder('${orderId}')">
+                                    Accept Job
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        if (!hasLeads) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fa-solid fa-filter" style="color: #CBD5E1;"></i></div>
+                    <h3>No leads found</h3>
+                    <p>Waiting for <b>${partnerCategory}</b> orders.</p>
                 </div>
             `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
+        } else {
+            list.innerHTML = html;
         }
-    </script>
+    }
+
+    // --- KEYWORD CHECKER ---
+    function checkServiceRelevance(serviceName) {
+        if (!serviceName || !partnerCategory) return false;
+        const sName = serviceName.toLowerCase();
+        
+        // Agar partner ke category ke liye keywords defined hain
+        if (categoryKeywords[partnerCategory]) {
+            // Check karo agar service name mein koi bhi keyword maujood hai
+            return categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
+        }
+        return false;
+    }
+
+    // --- 6. ACCEPT ORDER & SYNC ---
+    function acceptOrder(orderId) {
+        // Fetch order details first
+        db.ref(`orders/${orderId}`).once('value').then(snap => {
+            const orderData = snap.val();
+            if(!orderData) return;
+
+            if(!confirm("Accept this job for ₹" + (orderData.total || 0) + "?")) return;
+
+            const updates = {};
+            
+            // A. Update GLOBAL Order (Customer ko dikhega "Partner Assigned")
+            updates[`orders/${orderId}/status`] = 'assigned';
+            updates[`orders/${orderId}/partnerId`] = currentPartnerId;
+            
+            // B. Update USER Order (Backup sync)
+            if(orderData.userId) {
+                updates[`users/${orderData.userId}/orders/${orderId}/status`] = 'assigned';
+                updates[`users/${orderData.userId}/orders/${orderId}/partnerId`] = currentPartnerId;
+            }
+            
+            // C. Create PARTNER Job
+            updates[`partnerJobs/${currentPartnerId}/${orderId}`] = {
+                ...orderData,
+                status: 'scheduled',
+                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
+                startOtp: Math.floor(1000 + Math.random() * 9000)
+            };
+
+            // Run updates
+            db.ref().update(updates).then(() => {
+                showToast("Job Accepted Successfully!", "success");
+                // Thoda delay taaki toast dikh sake
+                setTimeout(() => window.location.href = 'partner-jobs.html', 1000);
+            });
+        });
+    }
+
+    // --- UTILS ---
+    function showToast(msg, type) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<div style="font-weight:700;">${type=='success'?'Success':'Info'}</div><div>${msg}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Open Modal Logic (Simplified)
+    function openLeadModal(orderId) {
+         db.ref(`orders/${orderId}`).once('value').then(snap => {
+            selectedLeadData = snap.val();
+            selectedLeadId = orderId;
+            document.getElementById('modalTitle').textContent = selectedLeadData.service;
+            
+            // Populate modal body details here...
+            document.getElementById('leadModal').classList.add('active');
+         });
+    }
+        </script>
 </body>
 </html>
+            
