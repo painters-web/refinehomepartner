@@ -79,7 +79,27 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <script>
+     <script>
+        // CATEGORY KEYWORDS (Same as before)
+        const categoryKeywords = {
+            'painting': ['paint','asian','berger','dulux','waterproof','leak','damp','seepage','terrace','roof','dr fixit','emulsion','primer','wall','texture'],
+            'electrician': ['electric','fan','switch','wiring','mcb'],
+            'plumber': ['plumb','tap','pipe','sink','toilet','drain'],
+            'ac': ['ac','air condition','split','gas','cooling'],
+            'cleaning': ['clean','sofa','carpet','bathroom','kitchen'],
+            'carpenter': ['carpen','wood','door','furniture','bed'],
+            'pest': ['pest','cockroach','termite','control']
+        };
+
+        function detectCategory(serviceText) {
+            if (!serviceText) return 'other';
+            const text = serviceText.toLowerCase();
+            for (const [category, keywords] of Object.entries(categoryKeywords)) {
+                if (keywords.some(k => text.includes(k))) return category;
+            }
+            return 'other';
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
             authDomain: "urban-paint-pro.firebaseapp.com",
@@ -89,34 +109,16 @@
             messagingSenderId: "929763117480",
             appId: "1:929763117480:web:560057baeb12672078b59d"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-// --- 1. SAARE KEYWORDS YAHAN HAIN ---
-const categoryKeywords = {
-    'painting': [
-        'asian', 'berger', 'dulux', 'nerolac', 'paint', 'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 
-        'matt', 'aspira', 'glitz', 'ace', 'apex', 'weatherproof', 'ultima', 'protek', 'bison', 'rangoli', 'total', 
-        'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life', 'supercover', 'velvet', 'touch', 
-        'living', 'diamond', 'weathershield', 'powerflex', 'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 
-        'excel', 'mica', 'marble', 'suraksha', 'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 
-        'interior', 'exterior', 'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 'dr fixit', 
-        'roofseal', 'raincoat', 'crack x', 'dampguard', 'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
-    ],
-    'electrician': ['electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'],
-    'plumber': ['plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'],
-    'ac': ['ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'],
-    'cleaning': ['clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'],
-    'carpenter': ['carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'],
-    'pest': ['pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 'control', 'insect', 'spray', 'herbal', 'ant']
-};
-
         
-        let currentPartnerId = null;
-        let partnerCategory = null; 
-        let partnerServices = []; // Critical Fix
-        let selectedLeadId = null;
-        let selectedLeadData = null;
+        let currentUser = null;
+        let myCategory = "all";
+        let currentTab = 'new';
+        let leads = { new: [], active: [], completed: [] };
+        let currentJob = null;
 
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -150,52 +152,63 @@ const categoryKeywords = {
                 renderFilteredLeads(orders);
             });
         }
+function renderLeads() {
+            const container = document.getElementById('leadsContainer');
+            const currentLeads = leads[currentTab];
+            
+            if (currentLeads.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:80px 20px; color:#94a3b8;"><i class="fa-solid fa-inbox" style="font-size:4rem; opacity:0.3; margin-bottom:20px;"></i><h3>No ${currentTab} leads</h3></div>`;
+                return;
+            }
 
-        function renderFilteredLeads(orders) {
-    const list = document.getElementById('leadsList');
-    const leads = Object.entries(orders).reverse();
-    let hasMatches = false;
-    let html = '';
-
-    leads.forEach(([id, order]) => {
-        const sName = (order.service || '').toLowerCase();
-        
-        // --- KEYWORD MATCHING LOGIC ---
-        let isMatch = false;
-        if (partnerCategory && categoryKeywords[partnerCategory]) {
-            // Check agar customer ki service mein hamara koi bhi keyword hai
-            isMatch = categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
+            let html = '';
+            currentLeads.forEach(lead => {
+                const isPainting = detectCategory(lead.service) === 'painting';
+                
+                if (currentTab === 'new') {
+                    html += `
+                        <div class="lead-card">
+                            <span class="status-badge new">New Request</span>
+                            <div class="service-title">${lead.service}</div>
+                            <div class="info-row"><i class="fa-solid fa-user"></i> <span>${lead.customer?.name || 'Customer'}</span></div>
+                            <div class="info-row"><i class="fa-solid fa-location-dot"></i> <span>${lead.customer?.address || 'Address'}</span></div>
+                            <div class="info-row"><i class="fa-regular fa-calendar"></i> <span>${lead.slot?.date || 'TBD'}</span></div>
+                            ${isPainting ? '<div style="background:#FEF3C7; padding:8px 12px; border-radius:8px; font-size:0.8rem; color:#92400E; margin-top:12px;"><i class="fa-solid fa-info-circle"></i> Visit required for quote</div>' : ''}
+                            <button class="btn btn-accept" onclick="acceptJob('${lead.customerId}', '${lead.id}', ${isPainting})">
+                                <i class="fa-solid fa-check"></i> Accept ${isPainting ? '& Visit' : 'Job'}
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Active jobs rendering based on status
+                    let statusBadge = '';
+                    let actionButton = '';
+                    
+                    if(lead.status === 'assigned' || lead.status === 'otp_shared') {
+                        statusBadge = '<span class="status-badge visit">Visit Pending</span>';
+                        actionButton = `<button class="btn btn-warning" onclick="openJobSheet('${lead.customerId}', '${lead.id}')"><i class="fa-solid fa-key"></i> Enter OTP & Start</button>`;
+                    } else if(lead.status === 'advance_paid' || lead.status === 'in_progress') {
+                        statusBadge = '<span class="status-badge progress">In Progress</span>';
+                        actionButton = `<button class="btn btn-success" onclick="openJobSheet('${lead.customerId}', '${lead.id}')"><i class="fa-solid fa-check-double"></i> Complete Job</button>`;
+                    } else if(lead.status === 'payment_pending') {
+                        statusBadge = '<span class="status-badge payment">Awaiting Payment</span>';
+                        actionButton = `<button class="btn" disabled style="background:#e5e7eb; color:#6b7280;"><i class="fa-solid fa-clock"></i> Waiting for Customer</button>`;
+                    }
+                    
+                    html += `
+                        <div class="lead-card" style="cursor:pointer;">
+                            ${statusBadge}
+                            <div class="service-title">${lead.service}</div>
+                            <div class="info-row"><i class="fa-solid fa-user"></i> <span>${lead.customer?.name}</span></div>
+                            <div class="info-row"><i class="fa-solid fa-calendar"></i> <span>${lead.slot?.date}</span></div>
+                            ${lead.quote ? `<div style="background:#F0FDFA; padding:10px; border-radius:8px; margin:12px 0; font-weight:700; color:var(--primary);">Quote: ₹${lead.quote.total}</div>` : ''}
+                            ${actionButton}
+                        </div>
+                    `;
+                }
+            });
+            container.innerHTML = html;
         }
-
-        if (isMatch) {
-            hasMatches = true;
-            const displayDate = order.slot?.date || order.date || 'Flexible';
-            const displayPrice = order.total || order.amount || 0;
-
-            html += `
-                <div class="lead-card" onclick="showLeadDetail('${id}')">
-                    <div class="lead-header">
-                        <span class="lead-type">${partnerCategory.toUpperCase()} LEAD</span>
-                        <div style="background:#F0FDFA; color:#0D9488; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">NEW</div>
-                    </div>
-                    <div class="lead-title">${order.service}</div>
-                    <div class="lead-details">
-                        <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${displayDate}</div>
-                        <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local Area'}</div>
-                    </div>
-                    <div class="lead-footer">
-                        <div style="font-size:1.3rem; font-weight:800; color:#0D9488;">₹${displayPrice.toLocaleString()}</div>
-                        <button class="btn-accept">View Details</button>
-                    </div>
-                </div>
-            `;
-        }
-    });
-
-    list.innerHTML = hasMatches ? html : `<div style="text-align:center; padding:40px; color:#94A3B8;"><h3>No Leads Found</h3><p>Aapki category se match karti koi lead nahi hai.</p></div>`;
-}
-
-
         function showLeadDetail(id) {
             db.ref('orders/' + id).once('value').then((snap) => {
                 const order = snap.val();
