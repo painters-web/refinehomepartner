@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0D9488">
     <title>New Leads | Partner Portal</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -14,178 +13,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
-
-        .header { 
-            position: fixed; top: 0; width: 100%; height: 70px; 
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            display: flex; align-items: center;
-            padding: 0 20px; z-index: 100;
-            border-bottom: 1px solid #CCFBF1;
-        }
-        .back-btn { 
-            width: 42px; height: 42px; border-radius: 12px;
-            background: #F0FDFA; border: none; color: var(--p);
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; margin-right: 15px;
-        }
-        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
+        :root { --p: #0D9488; --bg: #F0FDFA; --text: #134E4A; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 100px; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; }
+        .header { padding: 15px; background: white; border-bottom: 1px solid #CCFBF1; font-weight: 800; font-size: 1.2rem; display: flex; justify-content: space-between; }
+        .content { padding: 20px; }
         
-        .content { margin-top: 90px; padding: 0 20px; }
+        /* Debug Box Style */
+        .debug-box { background: #1E293B; color: #00FF00; padding: 15px; margin-bottom: 20px; border-radius: 10px; font-family: monospace; font-size: 0.8rem; overflow-x: auto; }
 
-        /* Lead Cards */
-        .lead-card {
-            background: white; border-radius: 20px;
-            padding: 20px; margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            position: relative; overflow: hidden;
-        }
-        .lead-card:active { transform: scale(0.98); }
+        .lead-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .lead-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .service-tag { background: #E0F2FE; color: #0284C7; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+        .price { font-size: 1.3rem; font-weight: 800; color: var(--p); }
         
-        .lead-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 12px;
-        }
-        .lead-type {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: #F0FDFA; padding: 6px 12px;
-            border-radius: 20px; font-size: 0.75rem;
-            font-weight: 700; color: var(--p); text-transform: uppercase;
-        }
-        .lead-urgency {
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 0.7rem; font-weight: 700;
-        }
-        .urgency-high { background: #FEF2F2; color: #DC2626; }
-        .urgency-medium { background: #F0F9FF; color: #0284C7; }
-
-        .lead-title { font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 12px; }
-        
-        .lead-details {
-            display: flex; flex-direction: column; gap: 8px;
-            margin-bottom: 15px; padding-bottom: 15px;
-            border-bottom: 1px dashed #E2E8F0;
-        }
-        .detail-item {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.9rem; color: #64748B; font-weight: 500;
-        }
-        .detail-item i { color: var(--p); width: 20px; text-align: center; }
-
-        .lead-footer {
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .lead-price { font-size: 1.3rem; font-weight: 800; color: var(--p); }
-        
-        .btn-accept {
-            background: var(--p); color: white;
-            border: none; padding: 10px 20px;
-            border-radius: 12px; font-weight: 700;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
-        }
-
-        /* Empty State */
-        .empty-state { text-align: center; padding: 60px 20px; color: #94A3B8; }
-        .empty-icon {
-            width: 100px; height: 100px;
-            background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
-            border-radius: 50%; margin: 0 auto 20px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.5rem; color: #CBD5E1;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px); z-index: 9999;
-            display: none; align-items: flex-end; justify-content: center;
-            padding: 0; opacity: 0; transition: opacity 0.3s ease;
-        }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        
-        .bottom-sheet {
-            background: white; width: 100%; max-width: 480px;
-            border-radius: 24px 24px 0 0;
-            transform: translateY(100%);
-            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-            max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;
-        }
-        .modal-overlay.active .bottom-sheet { transform: translateY(0); }
-        
-        .sheet-header {
-            background: linear-gradient(135deg, var(--p), var(--p-light));
-            color: white; padding: 25px 20px; position: relative;
-        }
-        .sheet-close {
-            position: absolute; top: 15px; right: 15px;
-            width: 36px; height: 36px; background: rgba(255,255,255,0.2);
-            border: none; border-radius: 50%; color: white; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .sheet-body { padding: 25px; overflow-y: auto; flex: 1; }
-        .detail-row {
-            display: flex; justify-content: space-between;
-            padding: 15px 0; border-bottom: 1px solid #F1F5F9;
-        }
-        .confirm-btn {
-            width: 100%; padding: 16px; background: var(--p); color: white;
-            border: none; border-radius: 14px; font-weight: 700; font-size: 1rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
+        .btn-accept { width: 100%; padding: 12px; background: var(--p); color: white; border: none; border-radius: 10px; font-weight: 700; margin-top: 10px; cursor: pointer; }
 
         /* Nav */
-        .nav { 
-            position: fixed; bottom: 0; width: 100%; height: 80px;
-            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px);
-            border-top: 1px solid #CCFBF1; display: flex; justify-content: space-around; 
-            align-items: center; z-index: 100; padding-bottom: 10px;
-        }
-        .nav-item { text-align: center; color: #94A3B8; font-size: 0.7rem; font-weight: 700; width: 70px; padding: 10px; border-radius: 16px; }
-        .nav-item.active { color: var(--p); background: #F0FDFA; transform: translateY(-5px); }
-        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
-        
-        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001; }
-        .toast { background: white; padding: 16px 20px; border-radius: 16px; display: flex; gap: 12px; margin-bottom: 10px; border-left: 4px solid var(--p); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #CCFBF1; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { text-align: center; color: #94A3B8; font-size: 0.7rem; font-weight: 700; }
+        .nav-item.active { color: var(--p); }
+        .nav-item i { display: block; font-size: 1.4rem; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <button class="back-btn" onclick="window.location.href='partner-dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
-        <div class="header-title">Live Leads</div>
-        <button class="back-btn"><i class="fa-solid fa-filter"></i></button>
+        <div>Live Leads</div>
+        <div style="font-size: 0.8rem; color: #64748B;" id="partnerStatus">Loading...</div>
     </div>
 
     <div class="content">
-        <div id="leadsList">
-            <div class="empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-spinner fa-spin" style="color:var(--p)"></i></div>
-                <p>Syncing with live orders...</p>
-            </div>
+        <div id="debugConsole" class="debug-box">
+            Initializing System Check...
         </div>
-    </div>
 
-    <div class="modal-overlay" id="leadModal">
-        <div class="bottom-sheet">
-            <div class="sheet-header">
-                <button class="sheet-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-                <div style="font-size:1.3rem; font-weight:700;">Lead Details</div>
-                <p style="opacity:0.9; font-size:0.9rem;">Review before accepting</p>
-            </div>
-            <div class="sheet-body" id="modalBody"></div>
-            <div style="padding:20px; border-top:1px solid #E2E8F0;">
-                <button class="confirm-btn" onclick="acceptLead()">
-                    <i class="fa-solid fa-check-circle"></i> Accept Lead
-                </button>
-            </div>
-        </div>
+        <div id="leadsList"></div>
     </div>
 
     <div class="nav">
@@ -195,10 +57,7 @@
         <div class="nav-item" onclick="window.location.href='partner-profile.html'"><i class="fa-solid fa-user"></i>Profile</div>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
-
     <script>
-        // --- 1. CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
             authDomain: "urban-paint-pro.firebaseapp.com",
@@ -208,366 +67,198 @@
             messagingSenderId: "929763117480",
             appId: "1:929763117480:web:560057baeb12672078b59d"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
 
-        // --- 2. YOUR KEYWORDS ---
         const categoryKeywords = {
-            'painting': [
-                'asian', 'berger', 'dulux', 'nerolac', 'paint', 'tractor', 'emulsion', 'royale', 
-                'luxury', 'matt', 'ace', 'apex', 'weatherproof', 'bison', 'rangoli', 'silk', 
-                'wall', 'texture', 'putty', 'primer', 'distemper', 'whitewash', 
-                'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
-                'dr fixit', 'roofseal', 'raincoat', 'coating', 'chemicals'
-            ],
-            'electrician': ['electric', 'fan', 'switch', 'socket', 'tube', 'mcb', 'inverter', 'geyser', 'wiring', 'fault', 'light'],
-            'plumber': ['plumb', 'tap', 'washer', 'basin', 'blockage', 'sink', 'pipe', 'toilet', 'jet spray', 'tank', 'shower', 'drain', 'leak'],
-            'ac': ['ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'cooling', 'service'],
-            'cleaning': ['clean', 'deep', 'home', '1bhk', '2bhk', 'bathroom', 'kitchen', 'sofa', 'carpet'],
-            'carpenter': ['wood', 'door', 'lock', 'handle', 'drill', 'curtain', 'rod', 'drawer', 'furniture', 'bed'],
-            'pest': ['pest', 'cockroach', 'termite', 'bed bug', 'rat', 'ant', 'insect']
-        };
+    // AB PAINTING MEIN HI SAB KUCH HAI (Paints + Waterproofing)
+    'painting': [
+        // --- PAINT BRANDS & PRODUCTS ---
+        'asian', 'berger', 'dulux', 'nerolac', 'paint', 
+        'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 'matt', 'aspira', 'glitz', 
+        'ace', 'apex', 'weatherproof', 'ultima', 'protek', 
+        'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
+        'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
+        'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
+        
+        // --- GENERAL PAINT TERMS ---
+        'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior',
 
-        let currentPartnerId = null;
-        let partnerCategory = null; 
-        let selectedLeadId = null;
-        let selectedLeadData = null;
+        // --- WATERPROOFING KEYWORDS (Jo Painter ko dikhenge) ---
+        'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
+        'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 
+        'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
+    ],
 
-        // --- 3. AUTH & LOAD ---
-        auth.onAuthStateChanged((user) => {
+    // --- OTHER CATEGORIES ---
+
+    'electrician': [
+        'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
+        'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
+    ],
+
+    'plumber': [
+        'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
+        'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
+    ],
+
+    'ac': [
+        'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
+        'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
+    ],
+
+    'cleaning': [
+        'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
+        'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
+    ],
+
+    'carpenter': [
+        'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
+        'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
+    ],
+
+    'pest': [
+        'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
+        'control', 'insect', 'spray', 'herbal', 'ant'
+    ]
+};
+        
+
+        let myCategory = null;
+        const debugConsole = document.getElementById('debugConsole');
+
+        function log(msg) {
+            debugConsole.innerHTML += `> ${msg}<br>`;
+            console.log(msg);
+        }
+
+        auth.onAuthStateChanged(user => {
             if (user) {
-                currentPartnerId = user.uid;
-                loadPartnerProfile(user.uid);
+                log("Partner Logged In: " + user.uid.slice(0, 5) + "...");
+                checkProfile(user.uid);
             } else {
-                window.location.href = 'partner-login.html';
+                log("❌ Not Logged In. Redirecting...");
+                setTimeout(() => window.location.href = 'partner-login.html', 2000);
             }
         });
 
-        function loadPartnerProfile(uid) {
+        function checkProfile(uid) {
             db.ref(`partners/${uid}`).once('value').then(snap => {
-                const p = snap.val();
-                if(p && p.category) {
-                    partnerCategory = p.category.toLowerCase();
-                    console.log("Partner Category:", partnerCategory);
-                    loadLiveOrders();
+                const profile = snap.val();
+                if (profile && profile.category) {
+                    myCategory = profile.category.toLowerCase();
+                    document.getElementById('partnerStatus').innerText = `${profile.name} (${myCategory})`;
+                    log(`✅ Category Found: "${myCategory}"`);
+                    startListening();
                 } else {
-                    document.getElementById('leadsList').innerHTML = `<div class="empty-state"><h3>Profile Incomplete</h3><p>Contact Admin to set Category</p></div>`;
+                    log("❌ ERROR: Partner Category missing in database.");
+                    log("Fix: Go to Firebase > partners > category set karo.");
+                    document.getElementById('leadsList').innerHTML = `<div style="text-align:center; padding:20px; color:red;"><h3>Profile Incomplete</h3><p>Category not set by Admin.</p></div>`;
                 }
             });
         }
 
-        // --- 4. SYNC WITH ORDERS (FIXED PATH) ---
-        function loadLiveOrders() {
-            // Hum 'leads' nahi, seedha 'orders' table padhenge jahan status 'pending' hai
-            db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
-                const orders = snapshot.val() || {};
-                renderFilteredLeads(orders);
-            });
-        }
-
-        function renderFilteredLeads(orders) {
-            const list = document.getElementById('leadsList');
-            const leads = Object.entries(orders).reverse();
-            let hasMatches = false;
-            let html = '';
-
-            leads.forEach(([id, order]) => {
-                if (isServiceRelevant(order.service)) {
-                    hasMatches = true;
-                    let urgency = 'medium';
-                    if((order.service||'').toLowerCase().includes('leak')) urgency = 'high';
-
-                    html += `
-                        <div class="lead-card" onclick="showLeadDetail('${id}')">
-                            <div class="lead-header">
-                                <span class="lead-type"><i class="fa-solid fa-briefcase"></i> ${partnerCategory.toUpperCase()} LEAD</span>
-                                <span class="lead-urgency urgency-${urgency}">${urgency === 'high' ? 'Urgent' : 'New'}</span>
-                            </div>
-                            <div class="lead-title">${order.service}</div>
-                            <div class="lead-details">
-                                <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${order.slot?.date || 'Date N/A'}</div>
-                                <div class="detail-item"><i class="fa-solid fa-clock"></i> ${order.slot?.time || 'Time N/A'}</div>
-                                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Area N/A'}</div>
-                            </div>
-                            <div class="lead-footer">
-                                <div class="lead-price">₹${(order.total || 0).toLocaleString()}</div>
-                                <button class="btn-accept">View Details</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            if (!hasMatches) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon"><i class="fa-solid fa-filter" style="color: #CBD5E1;"></i></div>
-                        <h3>No matching leads</h3>
-                        <p>Waiting for orders related to <b>${partnerCategory}</b></p>
-                    </div>`;
-            } else {
-                list.innerHTML = html;
-            }
-        }
-
-        function isServiceRelevant(serviceName) {
-            if (!serviceName) return false;
-            if (!partnerCategory || !categoryKeywords[partnerCategory]) return false;
-            const sName = serviceName.toLowerCase();
-            return categoryKeywords[partnerCategory].some(k => sName.includes(k.toLowerCase()));
-        }
-
-        // --- 5. MODAL & ACCEPT ---
-        function showLeadDetail(id) {
-            db.ref('orders/' + id).once('value').then((snap) => {
-                const order = snap.val();
-                if (!order) return;
-                selectedLeadId = id;
-                selectedLeadData = order;
-                
-                document.getElementById('modalBody').innerHTML = `
-                    <div class="detail-row"><span style="color:#64748B;">Service</span><span style="font-weight:700;">${order.service}</span></div>
-                    <div class="detail-row"><span style="color:#64748B;">Time</span><span style="font-weight:700;">${order.slot?.date}, ${order.slot?.time}</span></div>
-                    <div class="detail-row"><span style="color:#64748B;">Location</span><span style="font-weight:700;">${order.customer?.area}</span></div>
-                    <div class="detail-row"><span style="color:#64748B;">Customer</span><span style="font-weight:700;">${order.customer?.name}</span></div>
-                    <div style="margin-top:20px; font-size:1.4rem; font-weight:800; color:var(--p); text-align:right;">₹${(order.total || 0).toLocaleString()}</div>
-                `;
-                document.getElementById('leadModal').classList.add('active');
-            });
-        }
-
-        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
-
-        function acceptLead() {
-            if (!selectedLeadId || !currentPartnerId) return;
+        function startListening() {
+            log("📡 Connecting to 'orders' table...");
             
-            const updates = {};
-            // 1. Update Global Order (Customer sees "Partner Assigned")
-            updates[`orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            updates[`orders/${selectedLeadId}/partnerName`] = "Amit Kumar"; // Replace with actual name logic
+            // Hum saare orders utha rahe hain aur JS mein filter karenge taaki debug kar sakein
+            db.ref('orders').on('value', (snapshot) => {
+                const orders = snapshot.val();
+                const list = document.getElementById('leadsList');
+                list.innerHTML = '';
 
-            // 2. Sync to User Node
-            if (selectedLeadData.userId) {
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/status`] = 'assigned';
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            }
-
-            // 3. Create Partner Job
-            const jobData = {
-                ...selectedLeadData,
-                status: 'scheduled',
-                partnerId: currentPartnerId,
-                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
-                startOtp: Math.floor(1000 + Math.random() * 9000)
-            };
-            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
-
-            db.ref().update(updates).then(() => {
-                showToast('Lead Accepted!', 'success');
-                closeModal();
-                setTimeout(() => window.location.href = 'partner-jobs.html', 1000);
-            });
-        }
-
-        function showToast(msg, type='info') {
-            const box = document.getElementById('toastContainer');
-            const el = document.createElement('div');
-            el.className = 'toast';
-            el.innerHTML = `<i class="fa-solid fa-info-circle" style="color:var(--p)"></i> <div>${msg}</div>`;
-            box.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-    </script>
-</body>
-</html>
-
-                        <small>est.</small>
-                                </div>
-                                <button class="btn-accept" onclick="event.stopPropagation(); showLeadDetail('${orderId}')">
-                                    View Details
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                if (!orders) {
+                    log("⚠️ Database mein 'orders' table khaali hai.");
+                    list.innerHTML = `<div class="empty-state"><h3>No Orders Found</h3><p>Customer app se booking karein.</p></div>`;
+                    return;
                 }
-            });
 
-            if (!hasMatches) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon"><i class="fa-solid fa-filter" style="color: #CBD5E1;"></i></div>
-                        <h3 style="color: #64748B; margin-bottom: 8px;">No matching leads</h3>
-                        <p style="font-size: 0.9rem;">Waiting for new <b>${partnerCategory}</b> orders.</p>
-                    </div>
-                `;
-            } else {
-                list.innerHTML = html;
-            }
-        }
+                let count = 0;
+                log(`🔍 Scanning ${Object.keys(orders).length} total orders...`);
 
-        // --- 7. KEYWORD MATCHING ENGINE ---
-        function isServiceRelevant(serviceName) {
-            if (!serviceName) return false;
-            if (!partnerCategory || !categoryKeywords[partnerCategory]) return false;
-
-            const sName = serviceName.toLowerCase();
-            // Check if any keyword exists in service name
-            return categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
-        }
-
-        // --- 8. LEAD DETAILS & MODAL ---
-        function showLeadDetail(orderId) {
-            // Get fresh data
-            db.ref('orders/' + orderId).once('value').then((snapshot) => {
-                const order = snapshot.val();
-                if (!order) return;
-                
-                selectedLeadId = orderId;
-                selectedLeadData = order;
-                
-                document.getElementById('modalTitle').textContent = order.service;
-                document.getElementById('modalBody').innerHTML = `
-                    <div class="detail-row">
-                        <span class="detail-label">Service Type</span>
-                        <span class="detail-value">${order.service}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Preferred Time</span>
-                        <span class="detail-value">${order.slot?.date} <br> ${order.slot?.time}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Location</span>
-                        <span class="detail-value">${order.customer?.address || ''}<br>${order.customer?.area || ''}</span>
-                    </div>
-                     <div class="detail-row">
-                        <span class="detail-label">Customer</span>
-                        <span class="detail-value">${order.customer?.name || 'Valued Customer'}</span>
-                    </div>
-                    <div class="detail-row" style="border-bottom:none; margin-top:10px;">
-                        <span class="detail-label" style="font-size:1.1rem; color:#1E293B;">Est. Earning</span>
-                        <span class="detail-value" style="color: var(--p); font-size:1.4rem;">₹${(order.total || 0).toLocaleString()}</span>
-                    </div>
+                Object.entries(orders).reverse().forEach(([id, order]) => {
+                    // Logic Debugging
+                    const serviceName = (order.service || '').toLowerCase();
+                    const status = order.status || 'unknown';
                     
-                    <div style="margin-top:20px; padding:15px; background:#F0FDFA; border-radius:12px; font-size:0.85rem; color:#0F766E; display:flex; gap:10px;">
-                        <i class="fa-solid fa-circle-info" style="margin-top:3px;"></i>
-                        <div>By accepting, you agree to visit the location at the scheduled time. Customer will be notified immediately.</div>
-                    </div>
-                `;
-                
-                openModal();
+                    // 1. Status Check
+                    if (status !== 'pending' && status !== 'pending_cod') {
+                        // Agar status pending nahi hai to ignore karo (par console mein batao)
+                        // Uncomment below line to see ignored orders
+                        // log(`Skipped #${id.slice(-4)}: Status is '${status}'`);
+                        return;
+                    }
+
+                    // 2. Keyword Check
+                    const isMatch = checkKeywords(serviceName);
+                    
+                    if (isMatch) {
+                        count++;
+                        renderCard(id, order);
+                    } else {
+                        // log(`Skipped #${id.slice(-4)}: '${serviceName}' doesn't match '${myCategory}'`);
+                    }
+                });
+
+                if (count === 0) {
+                    log("❌ 0 Matches Found.");
+                    list.innerHTML = `<div class="empty-state"><h3>No Matching Leads</h3><p>Waiting for <b>${myCategory}</b> orders.</p></div>`;
+                } else {
+                    log(`✅ ${count} Leads displayed successfully!`);
+                }
             });
         }
 
-        function openModal() { document.getElementById('leadModal').classList.add('active'); }
-        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
+        function checkKeywords(serviceName) {
+            if (!categoryKeywords[myCategory]) return true; // Agar keywords nahi define kiye to sab dikhao
+            return categoryKeywords[myCategory].some(k => serviceName.includes(k));
+        }
 
-        // --- 9. ACCEPT LEAD LOGIC ---
-        function acceptLead() {
-            if (!selectedLeadId || !currentPartnerId) return;
+        function renderCard(id, order) {
+            const div = document.createElement('div');
+            div.className = 'lead-card';
+            div.innerHTML = `
+                <div class="lead-header">
+                    <span class="service-tag">${myCategory}</span>
+                    <span style="font-size:0.8rem; color:#64748B;">#${id.slice(-6)}</span>
+                </div>
+                <div style="font-weight:800; font-size:1.1rem; margin-bottom:5px;">${order.service}</div>
+                <div style="color:#64748B; font-size:0.9rem; margin-bottom:10px;">
+                    <i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Location N/A'}
+                </div>
+                <div class="lead-header" style="margin-bottom:0; align-items:center;">
+                    <div class="price">₹${(order.total || 0).toLocaleString()}</div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#F59E0B;">${order.paymentMethod === 'cod' ? 'COD' : 'Paid'}</div>
+                </div>
+                <button class="btn-accept" onclick="acceptOrder('${id}')">Accept Job</button>
+            `;
+            document.getElementById('leadsList').appendChild(div);
+        }
+
+        function acceptOrder(orderId) {
+            if(!confirm("Accept this job?")) return;
             
             const updates = {};
+            // Sync Updates
+            updates[`orders/${orderId}/status`] = 'assigned';
+            updates[`orders/${orderId}/partnerId`] = auth.currentUser.uid;
             
-            // A. Update Order Status (Customer sees "Partner Assigned")
-            updates[`orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            updates[`orders/${selectedLeadId}/assignedAt`] = firebase.database.ServerValue.TIMESTAMP;
-
-            // B. Backup update in User Node
-            if (selectedLeadData.userId) {
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/status`] = 'assigned';
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            }
-
-            // C. Create Partner Job Entry
-            const jobData = {
-                ...selectedLeadData,
-                status: 'scheduled',
-                partnerId: currentPartnerId,
-                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
-                startOtp: Math.floor(1000 + Math.random() * 9000) // Generate OTP
-            };
-            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
-
-            // Execute Updates
-            db.ref().update(updates)
-                .then(() => {
-                    showToast('Lead Accepted! Job Scheduled.', 'success');
-                    closeModal();
-                    setTimeout(() => window.location.href = 'partner-jobs.html', 1500);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    showToast('Error accepting lead.', 'error');
+            // Partner Job Create
+            db.ref(`orders/${orderId}`).once('value').then(snap => {
+                const data = snap.val();
+                updates[`partnerJobs/${auth.currentUser.uid}/${orderId}`] = {
+                    ...data,
+                    status: 'scheduled',
+                    acceptedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                db.ref().update(updates).then(() => {
+                    alert("Success! Job moved to 'My Jobs' tab.");
                 });
-        }
-
-        // --- 10. TOAST NOTIFICATION ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icon = type === 'success' ? 'fa-check' : 'fa-info';
-            
-            toast.innerHTML = `
-                <div class="toast-icon"><i class="fa-solid ${icon}"></i></div>
-                <div>
-                    <div style="font-weight: 700;">${type === 'success' ? 'Success!' : 'Notice'}</div>
-                    <div style="font-size: 0.85rem;">${message}</div>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
-        }
-    </script>
-</body>
-</html>
-       rejectedAt: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                showToast('Lead rejected', 'success');
-                loadLeads();
             });
         }
-
-        function showFilter() {
-            showToast('Filter options coming soon!', 'info');
-        }
-
-        // Toast
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icons = {
-                success: 'fa-circle-check',
-                error: 'fa-circle-xmark',
-                warning: 'fa-triangle-exclamation',
-                info: 'fa-circle-info'
-            };
-            
-            toast.innerHTML = `
-                <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
-                <div>
-                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">${type === 'success' ? 'Success!' : 'Info'}</div>
-                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
-        }
     </script>
 </body>
 </html>
+
