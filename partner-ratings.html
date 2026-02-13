@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>Reviews & Ratings | Partner Portal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .back-btn { 
+            width: 42px; height: 42px; border-radius: 12px;
+            background: #F0FDFA; border: none; color: var(--p);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-right: 15px;
+        }
+        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
+
+        .content { margin-top: 90px; padding: 0 20px; }
+
+        /* Rating Overview Card */
+        .rating-card {
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            border-radius: 24px; padding: 30px;
+            color: white; margin-bottom: 25px;
+            box-shadow: 0 15px 40px rgba(13, 148, 136, 0.3);
+        }
+        .rating-header {
+            display: flex; align-items: center; gap: 25px;
+        }
+        .rating-big {
+            font-size: 5rem; font-weight: 800; line-height: 1;
+        }
+        .rating-info { flex: 1; }
+        .rating-stars {
+            font-size: 1.5rem; margin-bottom: 8px;
+        }
+        .rating-count { font-size: 0.9rem; opacity: 0.9; }
+        .rating-rank {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.2); padding: 8px 16px;
+            border-radius: 20px; font-size: 0.85rem; margin-top: 10px;
+        }
+
+        /* Rating Bars */
+        .rating-bars {
+            background: white; border-radius: 20px;
+            padding: 25px; margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .bars-title {
+            font-weight: 700; color: #1E293B; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .bar-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 12px;
+        }
+        .bar-label {
+            width: 50px; font-weight: 700; color: #1E293B;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .bar-bg {
+            flex: 1; height: 10px; background: #F1F5F9;
+            border-radius: 5px; overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%; border-radius: 5px;
+            background: linear-gradient(90deg, #F59E0B, #FBBF24);
+        }
+        .bar-count { width: 30px; text-align: right; color: #64748B; font-size: 0.85rem; }
+
+        /* Reviews Section */
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: #1E293B; }
+        .filter-btn {
+            padding: 8px 16px; background: white;
+            border: 2px solid #E2E8F0; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 600; color: #475569;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+        }
+
+        /* Review Card */
+        .review-card {
+            background: white; border-radius: 20px;
+            padding: 20px; margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .review-header {
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 15px;
+        }
+        .reviewer-avatar {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.2rem;
+        }
+        .reviewer-info { flex: 1; }
+        .reviewer-name { font-weight: 700; color: #1E293B; }
+        .review-date { font-size: 0.8rem; color: #94A3B8; }
+        .review-rating {
+            display: flex; gap: 3px;
+        }
+        .review-rating i { color: #F59E0B; font-size: 0.9rem; }
+        .review-text {
+            color: #475569; line-height: 1.6; font-size: 0.95rem;
+        }
+        .review-service {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #F0FDFA; padding: 6px 12px;
+            border-radius: 20px; font-size: 0.75rem;
+            font-weight: 600; color: var(--p); margin-top: 12px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 50px 20px;
+            color: #94A3B8;
+        }
+        .empty-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
+            border-radius: 50%; margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+        }
+
+        /* Bottom Nav */
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; padding-bottom: 10px;
+        }
+        .nav-item { 
+            text-align: center; color: #94A3B8; 
+            font-size: 0.7rem; font-weight: 700;
+            width: 70px; cursor: pointer; padding: 10px;
+            border-radius: 16px; transition: all 0.2s;
+        }
+        .nav-item.active { 
+            color: var(--p); background: #F0FDFA;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="header-title">Reviews & Ratings</div>
+    </div>
+
+    <div class="content">
+        <!-- Rating Overview -->
+        <div class="rating-card">
+            <div class="rating-header">
+                <div class="rating-big" id="avgRating">0.0</div>
+                <div class="rating-info">
+                    <div class="rating-stars" id="ratingStars">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <div class="rating-count" id="totalReviews">0 reviews</div>
+                    <div class="rating-rank">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span id="partnerRank">Top 10% Partner</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Distribution -->
+        <div class="rating-bars">
+            <div class="bars-title">
+                <i class="fa-solid fa-chart-bar" style="color: var(--p);"></i>
+                Rating Distribution
+            </div>
+            <div id="ratingBars">
+                <!-- Dynamic bars -->
+            </div>
+        </div>
+
+        <!-- Reviews List -->
+        <div class="section-header">
+            <div class="section-title">Customer Reviews</div>
+            <button class="filter-btn" onclick="filterReviews()">
+                <i class="fa-solid fa-filter"></i> Filter
+            </button>
+        </div>
+
+        <div id="reviewsList">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-spinner fa-spin" style="color: var(--p);"></i></div>
+                <p>Loading reviews...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item active" onclick="window.location.href='partner-ratings.html'">
+            <i class="fa-solid fa-star"></i>Reviews
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-payout.html'">
+            <i class="fa-solid fa-wallet"></i>Payout
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let partnerId = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                partnerId = user.uid;
+                loadRatings(user.uid);
+                loadReviews(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function loadRatings(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                const partner = snapshot.val() || {};
+                const rating = partner.rating || 0;
+                const totalReviews = partner.totalReviews || 0;
+                
+                document.getElementById('avgRating').textContent = rating.toFixed(1);
+                document.getElementById('totalReviews').textContent = totalReviews + ' reviews';
+                
+                // Update stars
+                const starsContainer = document.getElementById('ratingStars');
+                let starsHtml = '';
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= Math.floor(rating)) {
+                        starsHtml += '<i class="fa-solid fa-star"></i>';
+                    } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+                        starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+                    } else {
+                        starsHtml += '<i class="fa-regular fa-star"></i>';
+                    }
+                }
+                starsContainer.innerHTML = starsHtml;
+                
+                // Update rank
+                if (rating >= 4.5) {
+                    document.getElementById('partnerRank').textContent = 'Top 5% Partner';
+                } else if (rating >= 4.0) {
+                    document.getElementById('partnerRank').textContent = 'Top 10% Partner';
+                } else if (rating >= 3.5) {
+                    document.getElementById('partnerRank').textContent = 'Top 25% Partner';
+                } else {
+                    document.getElementById('partnerRank').textContent = 'Growing Partner';
+                }
+            });
+        }
+
+        function loadReviews(uid) {
+            db.ref('partnerJobs/' + uid).orderByChild('status').equalTo('completed').on('value', (snapshot) => {
+                const jobs = snapshot.val() || {};
+                const reviews = [];
+                const ratings = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+                
+                Object.values(jobs).forEach(job => {
+                    if (job.review) {
+                        reviews.push({
+                            ...job.review,
+                            customerName: job.customerName,
+                            service: job.service,
+                            completedAt: job.completedAt
+                        });
+                        ratings[job.review.rating || 5]++;
+                    }
+                });
+                
+                renderReviews(reviews);
+                renderRatingBars(ratings, reviews.length);
+            });
+        }
+
+        function renderRatingBars(ratings, total) {
+            const container = document.getElementById('ratingBars');
+            container.innerHTML = Object.entries(ratings).reverse().map(([star, count]) => {
+                const percentage = total > 0 ? (count / total) * 100 : 0;
+                return `
+                    <div class="bar-row">
+                        <div class="bar-label">${star} <i class="fa-solid fa-star" style="color: #F59E0B; font-size: 0.7rem;"></i></div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="bar-count">${count}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderReviews(reviews) {
+            const list = document.getElementById('reviewsList');
+            
+            if (reviews.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fa-solid fa-comment-dots" style="color: #CBD5E1;"></i></div>
+                        <h3 style="color: #64748B; margin-bottom: 8px;">No reviews yet</h3>
+                        <p style="font-size: 0.85rem;">Complete jobs to get reviews</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by date (newest first)
+            reviews.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+            
+            list.innerHTML = reviews.map(review => {
+                const date = review.completedAt ? new Date(review.completedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently';
+                
+                return `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-avatar">${(review.customerName || 'C').charAt(0)}</div>
+                            <div class="reviewer-info">
+                                <div class="reviewer-name">${review.customerName || 'Customer'}</div>
+                                <div class="review-date">${date}</div>
+                            </div>
+                            <div class="review-rating">
+                                ${Array(5).fill(0).map((_, i) => 
+                                    i < (review.rating || 5) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>'
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div class="review-text">"${review.comment || 'Great service!'}"</div>
+                        <span class="review-service">
+                            <i class="fa-solid fa-briefcase"></i> ${review.service || 'Home Service'}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterReviews() {
+            alert('Filter options coming soon!');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>Profile | Partner Portal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; --error: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .header-title { font-weight: 800; font-size: 1.3rem; }
+        .logout-btn {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: #FEF2F2; border: none; color: var(--error);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .content { margin-top: 90px; padding: 0 20px; }
+
+        /* Profile Card */
+        .profile-card {
+            background: white; border-radius: 24px;
+            padding: 25px; margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .profile-img-container {
+            position: relative; display: inline-block; margin-bottom: 15px;
+        }
+        .profile-img {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 4px solid #F0FDFA; object-fit: cover;
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+        }
+        .camera-btn {
+            position: absolute; bottom: 0; right: 0;
+            width: 36px; height: 36px; background: var(--p);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: white; cursor: pointer;
+            border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .profile-name { font-size: 1.4rem; font-weight: 800; color: #1E293B; }
+        .profile-phone { color: #64748B; margin-top: 5px; }
+        .kyc-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 16px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 700; margin-top: 12px;
+        }
+        .kyc-verified { background: #DCFCE7; color: #16A34A; }
+        .kyc-pending { background: #FEF3C7; color: #D97706; }
+
+        /* Menu Items */
+        .menu-card {
+            background: white; border-radius: 20px;
+            overflow: hidden; margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .menu-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 18px 20px; border-bottom: 1px solid #F1F5F9;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:hover { background: #F8FAFC; }
+        .menu-icon {
+            width: 45px; height: 45px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .menu-text { flex: 1; font-weight: 600; color: #1E293B; }
+        .menu-arrow { color: #CBD5E1; }
+        .menu-badge {
+            background: #EF4444; color: white;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+
+        /* Toggle Items */
+        .toggle-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 18px 20px; border-bottom: 1px solid #F1F5F9;
+        }
+        .toggle-icon {
+            width: 45px; height: 45px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .toggle-text { flex: 1; }
+        .toggle-title { font-weight: 600; color: #1E293B; }
+        .toggle-subtitle { font-size: 0.8rem; color: #64748B; }
+        .toggle-switch {
+            width: 50px; height: 28px; background: #E2E8F0;
+            border-radius: 14px; position: relative; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-switch.active { background: var(--p); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 22px; height: 22px; background: white;
+            border-radius: 50%; transition: all 0.2s;
+        }
+        .toggle-switch.active::after { left: 25px; }
+
+        /* Bottom Nav */
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; padding-bottom: 10px;
+        }
+        .nav-item { 
+            text-align: center; color: #94A3B8; 
+            font-size: 0.7rem; font-weight: 700;
+            width: 70px; cursor: pointer; padding: 10px;
+            border-radius: 16px; transition: all 0.2s;
+        }
+        .nav-item.active { 
+            color: var(--p); background: #F0FDFA;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: white; width: 100%; max-width: 360px;
+            border-radius: 24px; padding: 25px;
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .modal-title { font-size: 1.2rem; font-weight: 800; color: #1E293B; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        .input-label { display: block; font-weight: 600; color: #1E293B; margin-bottom: 8px; font-size: 0.9rem; }
+        .input-field {
+            width: 100%; padding: 14px;
+            border: 2px solid #E2E8F0; border-radius: 12px;
+            outline: none; font-size: 1rem;
+        }
+        .input-field:focus { border-color: var(--p); }
+        .btn-primary {
+            width: 100%; padding: 14px;
+            background: var(--p); color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer; margin-top: 10px;
+        }
+        .btn-danger {
+            width: 100%; padding: 14px;
+            background: #EF4444; color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">My Profile</div>
+        <button class="logout-btn" onclick="confirmLogout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+    </div>
+
+    <div class="content">
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-img-container">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" class="profile-img" id="profileImg">
+                <div class="camera-btn" onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="uploadPhoto(this)">
+            </div>
+            <div class="profile-name" id="profileName">Loading...</div>
+            <div class="profile-phone" id="profilePhone">...</div>
+            <div class="kyc-badge kyc-verified" id="kycBadge">
+                <i class="fa-solid fa-badge-check"></i> KYC Verified
+            </div>
+        </div>
+
+        <!-- Settings Menu -->
+        <div class="menu-card">
+            <div class="menu-item" onclick="editProfile()">
+                <div class="menu-icon" style="background: #F0FDFA; color: var(--p);">
+                    <i class="fa-solid fa-user-pen"></i>
+                </div>
+                <div class="menu-text">Edit Profile</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="updateKYC()">
+                <div class="menu-icon" style="background: #FEF3C7; color: #D97706;">
+                    <i class="fa-solid fa-file-contract"></i>
+                </div>
+                <div class="menu-text">Update KYC</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="manageBank()">
+                <div class="menu-icon" style="background: #DBEAFE; color: #2563EB;">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="menu-text">Bank Account</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="workArea()">
+                <div class="menu-icon" style="background: #DCFCE7; color: #16A34A;">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div class="menu-text">Work Area</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="menu-card">
+            <div class="toggle-item">
+                <div class="toggle-icon" style="background: #FEF3C7; color: #D97706;">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="toggle-text">
+                    <div class="toggle-title">Notifications</div>
+                    <div class="toggle-subtitle">Get alerts for new leads</div>
+                </div>
+                <div class="toggle-switch active" onclick="toggleSwitch(this, 'notifications')"></div>
+            </div>
+            <div class="toggle-item">
+                <div class="toggle-icon" style="background: #DCFCE7; color: #16A34A;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="toggle-text">
+                    <div class="toggle-title">Available for Work</div>
+                    <div class="toggle-subtitle">Show as available to customers</div>
+                </div>
+                <div class="toggle-switch active" onclick="toggleSwitch(this, 'available')"></div>
+            </div>
+        </div>
+
+        <!-- Support -->
+        <div class="menu-card">
+            <div class="menu-item" onclick="contactSupport()">
+                <div class="menu-icon" style="background: #F0FDFA; color: var(--p);">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div class="menu-text">Help & Support</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="termsConditions()">
+                <div class="menu-icon" style="background: #F1F5F9; color: #64748B;">
+                    <i class="fa-solid fa-file-lines"></i>
+                </div>
+                <div class="menu-text">Terms & Conditions</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+            <div class="menu-item" onclick="privacyPolicy()">
+                <div class="menu-icon" style="background: #F1F5F9; color: #64748B;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="menu-text">Privacy Policy</div>
+                <i class="fa-solid fa-chevron-right menu-arrow"></i>
+            </div>
+        </div>
+
+        <p style="text-align: center; color: #94A3B8; font-size: 0.8rem; margin: 20px 0;">
+            Partner App v1.0.0
+        </p>
+    </div>
+
+    <!-- Logout Modal -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-title">Logout?</div>
+            <p style="color: #64748B; margin-bottom: 20px;">Are you sure you want to logout?</p>
+            <button class="btn-danger" onclick="logout()">Logout</button>
+            <button class="btn-primary" onclick="closeModal()" style="background: #F1F5F9; color: #475569; margin-top: 10px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-ratings.html'">
+            <i class="fa-solid fa-star"></i>Reviews
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-payout.html'">
+            <i class="fa-solid fa-wallet"></i>Payout
+        </div>
+        <div class="nav-item active" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const storage = firebase.storage();
+
+        let partnerId = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                partnerId = user.uid;
+                loadProfile(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function loadProfile(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                const partner = snapshot.val() || {};
+                
+                document.getElementById('profileName').textContent = partner.name || 'Partner';
+                document.getElementById('profilePhone').textContent = partner.phone || partner.email || '';
+                
+                if (partner.photoURL) {
+                    document.getElementById('profileImg').src = partner.photoURL;
+                }
+                
+                // KYC Badge
+                const badge = document.getElementById('kycBadge');
+                if (partner.kycStatus === 'approved') {
+                    badge.className = 'kyc-badge kyc-verified';
+                    badge.innerHTML = '<i class="fa-solid fa-badge-check"></i> KYC Verified';
+                } else {
+                    badge.className = 'kyc-badge kyc-pending';
+                    badge.innerHTML = '<i class="fa-solid fa-clock"></i> KYC Pending';
+                }
+            });
+        }
+
+        function uploadPhoto(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image too large. Max 2MB allowed.');
+                return;
+            }
+
+            const timestamp = new Date().getTime();
+            const filename = `partner_${partnerId}_${timestamp}.jpg`;
+            const storageRef = storage.ref(`partners/${partnerId}/${filename}`);
+            
+            storageRef.put(file).then(() => {
+                return storageRef.getDownloadURL();
+            }).then((url) => {
+                return db.ref('partners/' + partnerId + '/photoURL').set(url);
+            }).then(() => {
+                alert('Photo updated!');
+            });
+        }
+
+        function toggleSwitch(el, type) {
+            el.classList.toggle('active');
+            const isActive = el.classList.contains('active');
+            
+            if (type === 'available') {
+                db.ref('partners/' + partnerId + '/available').set(isActive);
+            }
+        }
+
+        function editProfile() {
+            alert('Edit profile coming soon!');
+        }
+
+        function updateKYC() {
+            window.location.href = 'partner-kyc-status.html';
+        }
+
+        function manageBank() {
+            window.location.href = 'partner-payout.html';
+        }
+
+        function workArea() {
+            alert('Work area settings coming soon!');
+        }
+
+        function contactSupport() {
+            window.location.href = 'https://wa.me/919711904092';
+        }
+
+        function termsConditions() {
+            alert('Terms & Conditions coming soon!');
+        }
+
+        function privacyPolicy() {
+            alert('Privacy Policy coming soon!');
+        }
+
+        function confirmLogout() {
+            document.getElementById('logoutModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('logoutModal').classList.remove('active');
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>
