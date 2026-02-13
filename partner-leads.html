@@ -152,46 +152,49 @@ const categoryKeywords = {
         }
 
         function renderFilteredLeads(orders) {
-            const list = document.getElementById('leadsList');
-            const leads = Object.entries(orders).reverse();
-            let hasMatches = false;
-            let html = '';
+    const list = document.getElementById('leadsList');
+    const leads = Object.entries(orders).reverse();
+    let hasMatches = false;
+    let html = '';
 
-            leads.forEach(([id, order]) => {
-                const sName = (order.service || '').toLowerCase();
-                let isMatch = partnerServices.some(s => sName.includes(s));
-
-                if (!isMatch && partnerServices.includes('painting')) {
-                    const paintKeywords = ['paint', 'wall', 'water', 'leak', 'putty', 'texture', 'dr', 'fixit'];
-                    isMatch = paintKeywords.some(k => sName.includes(k));
-                }
-
-                if (isMatch) {
-                    hasMatches = true;
-                    const displayDate = order.slot?.date || order.date || 'Flexible';
-                    const displayPrice = order.total || order.amount || 0;
-
-                    html += `
-                        <div class="lead-card" onclick="showLeadDetail('${id}')">
-                            <div class="lead-header">
-                                <span class="lead-type">NEW LEAD</span>
-                            </div>
-                            <div class="lead-title">${order.service}</div>
-                            <div class="lead-details">
-                                <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${displayDate}</div>
-                                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local Area'}</div>
-                            </div>
-                            <div class="lead-footer">
-                                <div style="font-size:1.3rem; font-weight:800; color:var(--p);">₹${displayPrice.toLocaleString()}</div>
-                                <button class="btn-accept">View Details</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            list.innerHTML = hasMatches ? html : `<div style="text-align:center; padding:40px; color:#94A3B8;"><h3>No Leads Found</h3><p>Aapki services se match karti koi lead abhi nahi hai.</p></div>`;
+    leads.forEach(([id, order]) => {
+        const sName = (order.service || '').toLowerCase();
+        
+        // --- KEYWORD MATCHING LOGIC ---
+        let isMatch = false;
+        if (partnerCategory && categoryKeywords[partnerCategory]) {
+            // Check agar customer ki service mein hamara koi bhi keyword hai
+            isMatch = categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
         }
+
+        if (isMatch) {
+            hasMatches = true;
+            const displayDate = order.slot?.date || order.date || 'Flexible';
+            const displayPrice = order.total || order.amount || 0;
+
+            html += `
+                <div class="lead-card" onclick="showLeadDetail('${id}')">
+                    <div class="lead-header">
+                        <span class="lead-type">${partnerCategory.toUpperCase()} LEAD</span>
+                        <div style="background:#F0FDFA; color:#0D9488; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">NEW</div>
+                    </div>
+                    <div class="lead-title">${order.service}</div>
+                    <div class="lead-details">
+                        <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${displayDate}</div>
+                        <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local Area'}</div>
+                    </div>
+                    <div class="lead-footer">
+                        <div style="font-size:1.3rem; font-weight:800; color:#0D9488;">₹${displayPrice.toLocaleString()}</div>
+                        <button class="btn-accept">View Details</button>
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    list.innerHTML = hasMatches ? html : `<div style="text-align:center; padding:40px; color:#94A3B8;"><h3>No Leads Found</h3><p>Aapki category se match karti koi lead nahi hai.</p></div>`;
+}
+
 
         function showLeadDetail(id) {
             db.ref('orders/' + id).once('value').then((snap) => {
