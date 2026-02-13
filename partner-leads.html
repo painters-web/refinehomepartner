@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>New Leads | Partner Portal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
+        .back-btn { font-size: 1.2rem; margin-right: 15px; cursor: pointer; color: var(--p); border: none; background: none;}
+
+        .content { margin-top: 80px; padding: 0 20px; }
+
+        .lead-card {
+            background: white; border-radius: 20px;
+            padding: 20px; margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid transparent;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .lead-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .lead-type { background: #F0FDFA; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--p); text-transform: uppercase; }
+        .lead-title { font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 8px; }
+        .lead-details { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #E2E8F0; }
+        .detail-item { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #64748B; font-weight: 500; }
+        .detail-item i { color: var(--p); width: 20px; text-align: center; }
+        .lead-footer { display: flex; justify-content: space-between; align-items: center; }
+        .lead-price { font-size: 1.3rem; font-weight: 800; color: var(--p); }
+        .btn-accept { background: var(--p); color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+        /* Status Bar */
+        .status-bar { background: #E0F2FE; color: #0369A1; padding: 10px 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: flex-end; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .bottom-sheet { background: white; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 25px; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .confirm-btn { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 20px; }
+
+        /* Nav */
+        .nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-top: 1px solid #CCFBF1; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav-item { text-align: center; color: #94A3B8; font-size: 0.7rem; font-weight: 700; }
+        .nav-item.active { color: var(--p); }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+        
+        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001; }
+        .toast { background: white; padding: 12px 20px; border-radius: 30px; border: 1px solid #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom:10px; font-weight:600; display: flex; align-items: center; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='partner-dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="header-title">Live Leads</div>
+        <button class="back-btn" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i></button>
+    </div>
+
+    <div class="content">
+        <div class="status-bar" id="partnerInfoBar">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Checking profile...
+        </div>
+
+        <div id="leadsList">
+            <div style="text-align:center; padding:50px; color:#94A3B8;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:15px;"></i>
+                <p>Looking for orders...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="leadModal">
+        <div class="bottom-sheet">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:1.2rem;">Lead Details</h2>
+                <button onclick="closeModal()" style="background:none; border:none; font-size:1.5rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="modalBody"></div>
+            <button class="confirm-btn" onclick="acceptLead()">
+                <i class="fa-solid fa-check-circle"></i> Accept Lead
+            </button>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-dashboard.html'"><i class="fa-solid fa-house"></i>Home</div>
+        <div class="nav-item active"><i class="fa-solid fa-bolt"></i>Leads</div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'"><i class="fa-solid fa-briefcase"></i>Jobs</div>
+        <div class="nav-item" onclick="window.location.href='partner-profile.html'"><i class="fa-solid fa-user"></i>Profile</div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // --- 1. FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // --- 2. YOUR EXACT CATEGORY KEYWORDS ---
+        const categoryKeywords = {
+            // AB PAINTING MEIN HI SAB KUCH HAI (Paints + Waterproofing)
+            'painting': [
+                // --- PAINT BRANDS & PRODUCTS ---
+                'asian', 'berger', 'dulux', 'nerolac', 'paint', 
+                'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'luxury', 'matt', 'aspira', 'glitz', 
+                'ace', 'apex', 'weatherproof', 'ultima', 'protek', 
+                'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
+                'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
+                'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
+                
+                // --- GENERAL PAINT TERMS ---
+                'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior',
+
+                // --- WATERPROOFING KEYWORDS (Jo Painter ko dikhenge) ---
+                'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
+                'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 
+                'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
+            ],
+
+            'electrician': [
+                'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
+                'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
+            ],
+
+            'plumber': [
+                'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
+                'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
+            ],
+
+            'ac': [
+                'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
+                'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
+            ],
+
+            'cleaning': [
+                'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
+                'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
+            ],
+
+            'carpenter': [
+                'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
+                'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
+            ],
+
+            'pest': [
+                'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
+                'control', 'insect', 'spray', 'herbal', 'ant'
+            ]
+        };
+
+        let currentPartnerId = null;
+        let partnerCategory = null; 
+        let selectedLeadId = null;
+        let selectedLeadData = null;
+
+        // --- 3. AUTH & PROFILE ---
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentPartnerId = user.uid;
+                loadPartnerProfile(user.uid);
+            } else {
+                window.location.href = 'partner-login.html';
+            }
+        });
+
+        function loadPartnerProfile(uid) {
+            db.ref(`partners/${uid}`).once('value').then(snap => {
+                const p = snap.val();
+                const infoBar = document.getElementById('partnerInfoBar');
+                
+                if(p && p.category) {
+                    partnerCategory = p.category.toLowerCase();
+                    infoBar.innerHTML = `<i class="fa-solid fa-user-check"></i> Connected as <b>${partnerCategory}</b>`;
+                    infoBar.style.background = "#DCFCE7";
+                    infoBar.style.color = "#166534";
+                    loadLiveOrders(); // Start syncing
+                } else {
+                    infoBar.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Category missing`;
+                    infoBar.style.background = "#FEE2E2";
+                    infoBar.style.color = "#991B1B";
+                    document.getElementById('leadsList').innerHTML = `<div style="text-align:center; padding:40px;"><p>Please ask Admin to set your category.</p></div>`;
+                }
+            });
+        }
+
+        // --- 4. SYNC WITH ORDERS (FIXED) ---
+        function loadLiveOrders() {
+            // Ab hum 'orders' table read kar rahe hain jahan 'status' = 'pending' hai
+            db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
+                const orders = snapshot.val() || {};
+                renderFilteredLeads(orders);
+            });
+        }
+
+        function renderFilteredLeads(orders) {
+            const list = document.getElementById('leadsList');
+            const leads = Object.entries(orders).reverse();
+            let hasMatches = false;
+            let html = '';
+
+            leads.forEach(([id, order]) => {
+                // Check keywords match
+                if (isServiceRelevant(order.service)) {
+                    hasMatches = true;
+                    
+                    // Determine Urgency
+                    let urgency = 'medium';
+                    if((order.service || '').toLowerCase().includes('leak')) urgency = 'high';
+
+                    // Data Mapping (Order -> Lead Display)
+                    // Note: 'order.slot' se date/time milega
+                    const leadDate = order.slot?.date || 'Flexible';
+                    const leadTime = order.slot?.time || 'Anytime';
+                    const leadArea = order.customer?.area || 'Area N/A';
+                    const leadPrice = order.total || order.amount || 0;
+
+                    html += `
+                        <div class="lead-card" onclick="showLeadDetail('${id}')">
+                            <div class="lead-header">
+                                <span class="lead-type"><i class="fa-solid fa-briefcase"></i> ${partnerCategory.toUpperCase()}</span>
+                                <div style="background:${urgency==='high'?'#FEF2F2':'#F0F9FF'}; color:${urgency==='high'?'#DC2626':'#0284C7'}; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">
+                                    ${urgency === 'high' ? 'Urgent' : 'New'}
+                                </div>
+                            </div>
+                            <div class="lead-title">${order.service}</div>
+                            <div class="lead-details">
+                                <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${leadDate}</div>
+                                <div class="detail-item"><i class="fa-solid fa-clock"></i> ${leadTime}</div>
+                                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${leadArea}</div>
+                            </div>
+                            <div class="lead-footer">
+                                <div class="lead-price">₹${leadPrice.toLocaleString()}</div>
+                                <button class="btn-accept">View</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasMatches) {
+                list.innerHTML = `
+                    <div style="text-align:center; padding:50px 20px; color:#94A3B8;">
+                        <i class="fa-solid fa-filter" style="font-size:3rem; color:#E2E8F0; margin-bottom:15px;"></i>
+                        <h3>No matching leads</h3>
+                        <p>Waiting for <b>${partnerCategory}</b> orders.</p>
+                    </div>`;
+            } else {
+                list.innerHTML = html;
+            }
+        }
+
+        function isServiceRelevant(serviceName) {
+            if (!serviceName) return false;
+            if (!partnerCategory || !categoryKeywords[partnerCategory]) return false;
+            
+            const sName = serviceName.toLowerCase();
+            return categoryKeywords[partnerCategory].some(k => sName.includes(k.toLowerCase()));
+        }
+
+        // --- 5. DETAILS & ACCEPT ---
+        function showLeadDetail(id) {
+            db.ref('orders/' + id).once('value').then((snap) => {
+                const order = snap.val();
+                if (!order) return;
+                selectedLeadId = id;
+                selectedLeadData = order;
+                
+                document.getElementById('modalBody').innerHTML = `
+                    <div style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                        <div style="color:#64748B; font-size:0.9rem;">Service</div>
+                        <div style="font-weight:700; font-size:1.1rem; color:#1E293B;">${order.service}</div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <div style="color:#64748B; font-size:0.9rem;">Location</div>
+                        <div style="font-weight:600;">${order.customer?.address || ''}, ${order.customer?.area || ''}</div>
+                    </div>
+                    <div style="margin-bottom:15px; display:flex; justify-content:space-between;">
+                        <div>
+                            <div style="color:#64748B; font-size:0.9rem;">Date</div>
+                            <div style="font-weight:600;">${order.slot?.date}</div>
+                        </div>
+                        <div>
+                            <div style="color:#64748B; font-size:0.9rem;">Time</div>
+                            <div style="font-weight:600;">${order.slot?.time}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right; font-size:1.5rem; font-weight:800; color:var(--p);">
+                        ₹${(order.total || 0).toLocaleString()}
+                    </div>
+                `;
+                document.getElementById('leadModal').classList.add('active');
+            });
+        }
+
+        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
+
+        function acceptLead() {
+            if (!selectedLeadId || !currentPartnerId) return;
+            
+            const updates = {};
+            // Sync Updates
+            updates[`orders/${selectedLeadId}/status`] = 'assigned';
+            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
+            
+            // Partner Job Create
+            const jobData = {
+                ...selectedLeadData,
+                status: 'scheduled',
+                partnerId: currentPartnerId,
+                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
+                startOtp: Math.floor(1000 + Math.random() * 9000)
+            };
+            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
+
+            db.ref().update(updates).then(() => {
+                showToast('Lead Accepted! Moved to Jobs tab.', 'success');
+                closeModal();
+                setTimeout(() => window.location.href = 'partner-jobs.html', 1000);
+            });
+        }
+
+        function showToast(msg, type='info') {
+            const box = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16A34A"></i> <div>${msg}</div>`;
+            box.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
+      }
+            });
+
+            if (!hasMatches) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fa-solid fa-filter" style="color: #CBD5E1;"></i></div>
+                        <h3 style="color: #64748B; margin-bottom: 8px;">No matching leads</h3>
+                        <p style="font-size: 0.9rem;">Waiting for new <b>${partnerCategory}</b> orders.</p>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = html;
+            }
+        }
+
+        // --- 7. KEYWORD MATCHING ENGINE ---
+        function isServiceRelevant(serviceName) {
+            if (!serviceName) return false;
+            if (!partnerCategory || !categoryKeywords[partnerCategory]) return false;
+
+            const sName = serviceName.toLowerCase();
+            // Check if any keyword exists in service name
+            return categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
+        }
+
+        // --- 8. LEAD DETAILS & MODAL ---
+        function showLeadDetail(orderId) {
+            // Get fresh data
+            db.ref('orders/' + orderId).once('value').then((snapshot) => {
+                const order = snapshot.val();
+                if (!order) return;
+                
+                selectedLeadId = orderId;
+                selectedLeadData = order;
+                
+                document.getElementById('modalTitle').textContent = order.service;
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="detail-row">
+                        <span class="detail-label">Service Type</span>
+                        <span class="detail-value">${order.service}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Preferred Time</span>
+                        <span class="detail-value">${order.slot?.date} <br> ${order.slot?.time}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value">${order.customer?.address || ''}<br>${order.customer?.area || ''}</span>
+                    </div>
+                     <div class="detail-row">
+                        <span class="detail-label">Customer</span>
+                        <span class="detail-value">${order.customer?.name || 'Valued Customer'}</span>
+                    </div>
+                    <div class="detail-row" style="border-bottom:none; margin-top:10px;">
+                        <span class="detail-label" style="font-size:1.1rem; color:#1E293B;">Est. Earning</span>
+                        <span class="detail-value" style="color: var(--p); font-size:1.4rem;">₹${(order.total || 0).toLocaleString()}</span>
+                    </div>
+                    
+                    <div style="margin-top:20px; padding:15px; background:#F0FDFA; border-radius:12px; font-size:0.85rem; color:#0F766E; display:flex; gap:10px;">
+                        <i class="fa-solid fa-circle-info" style="margin-top:3px;"></i>
+                        <div>By accepting, you agree to visit the location at the scheduled time. Customer will be notified immediately.</div>
+                    </div>
+                `;
+                
+                openModal();
+            });
+        }
+
+        function openModal() { document.getElementById('leadModal').classList.add('active'); }
+        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
+
+        // --- 9. ACCEPT LEAD LOGIC ---
+        function acceptLead() {
+            if (!selectedLeadId || !currentPartnerId) return;
+            
+            const updates = {};
+            
+            // A. Update Order Status (Customer sees "Partner Assigned")
+            updates[`orders/${selectedLeadId}/status`] = 'assigned';
+            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
+            updates[`orders/${selectedLeadId}/assignedAt`] = firebase.database.ServerValue.TIMESTAMP;
+
+            // B. Backup update in User Node
+            if (selectedLeadData.userId) {
+                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/status`] = 'assigned';
+                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/partnerId`] = currentPartnerId;
+            }
+
+            // C. Create Partner Job Entry
+            const jobData = {
+                ...selectedLeadData,
+                status: 'scheduled',
+                partnerId: currentPartnerId,
+                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
+                startOtp: Math.floor(1000 + Math.random() * 9000) // Generate OTP
+            };
+            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
+
+            // Execute Updates
+            db.ref().update(updates)
+                .then(() => {
+                    showToast('Lead Accepted! Job Scheduled.', 'success');
+                    closeModal();
+                    setTimeout(() => window.location.href = 'partner-jobs.html', 1500);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    showToast('Error accepting lead.', 'error');
+                });
+        }
+
+        // --- 10. TOAST NOTIFICATION ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-check' : 'fa-info';
+            
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fa-solid ${icon}"></i></div>
+                <div>
+                    <div style="font-weight: 700;">${type === 'success' ? 'Success!' : 'Notice'}</div>
+                    <div style="font-size: 0.85rem;">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
+       rejectedAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                showToast('Lead rejected', 'success');
+                loadLeads();
+            });
+        }
+
+        function showFilter() {
+            showToast('Filter options coming soon!', 'info');
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
+                <div>
+                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">${type === 'success' ? 'Success!' : 'Info'}</div>
+                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
