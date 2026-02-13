@@ -89,7 +89,7 @@
     </div>
 
     <script>
-    // FIREBASE CONFIG
+    // Firebase Config (Same as before)
     const firebaseConfig = {
         apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
         authDomain: "urban-paint-pro.firebaseapp.com",
@@ -103,85 +103,76 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    let partnerCategory = null;
+    let partnerServices = []; // Ab hum category nahi, services ki list rakhenge
 
-    // 1. AUTH CHECK
     auth.onAuthStateChanged((user) => {
         if (user) {
-            // प्रोफाइल लोड होने के बाद ही लीड्स चेक करेंगे
+            // 1. Partner ki Services fetch karo
             db.ref(`partners/${user.uid}`).on('value', snap => {
                 const p = snap.val();
                 if(p) {
-                    // UI अपडेट करें
                     if(document.getElementById('partnerName')) document.getElementById('partnerName').innerText = p.name || 'Partner';
-                    if(document.getElementById('partnerCategory')) document.getElementById('partnerCategory').innerText = (p.category || 'General').toUpperCase();
                     
-                    partnerCategory = (p.category || '').toLowerCase();
+                    // Yahan hum 'services' field utha rahe hain (jo shayad ek array ya comma-separated string ho)
+                    // Agar string hai toh use array mein badal denge
+                    const rawServices = p.services || p.category || ""; 
+                    partnerServices = Array.isArray(rawServices) ? rawServices : rawServices.toLowerCase().split(',').map(s => s.trim());
                     
-                    // अब लीड्स लोड करें
+                    if(document.getElementById('pCategory')) {
+                        document.getElementById('pCategory').innerText = partnerServices.join(', ').toUpperCase();
+                    }
+
+                    // Ab leads load karo
                     loadDashboardLeads();
                 }
             });
         } else {
-            window.location.href = 'partner-login.html';
+            window.location.href = 'index.html';
         }
     });
 
-    // 2. LOAD LEADS FOR DASHBOARD (Connected to ORDERS table)
     function loadDashboardLeads() {
-        // ध्यान दें: 'orders' फोल्डर और 'pending' स्टेटस
+        // Customer ke orders check karo
         db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
             const orders = snapshot.val() || {};
-            // आपकी फाइल में ID 'dashboardLeads' या 'activityList' हो सकती है, दोनों चेक कर लेते हैं
             const container = document.getElementById('dashboardLeads') || document.getElementById('activityList');
-            
             if (!container) return;
 
             let html = '';
             let count = 0;
 
-            // लेटेस्ट आर्डर पहले दिखाने के लिए रिवर्स
-            const orderEntries = Object.entries(orders).reverse();
-
-            orderEntries.forEach(([id, order]) => {
+            Object.entries(orders).reverse().forEach(([id, order]) => {
                 const sName = (order.service || '').toLowerCase();
-                let isMatch = false;
                 
-                // पेंटिंग पार्टनर को वॉटरप्रूफिंग भी दिखे (Keywords Logic)
-                if (partnerCategory === 'painting') {
-                     if (sName.includes('paint') || sName.includes('wall') || sName.includes('water') || sName.includes('leak') || sName.includes('dr')) isMatch = true;
-                } else if (partnerCategory && sName.includes(partnerCategory)) {
-                    isMatch = true;
+                // CHECK: Kya customer ki service hamari partner services mein se kisi ek se match karti hai?
+                let isMatch = partnerServices.some(service => sName.includes(service.toLowerCase()));
+
+                // Extra Painting Check (Waterproofing keywords)
+                if (!isMatch && partnerServices.includes('painting')) {
+                    const paintKeywords = ['paint', 'wall', 'water', 'leak', 'putty', 'texture', 'fixit'];
+                    isMatch = paintKeywords.some(k => sName.includes(k));
                 }
 
                 if (isMatch) {
                     count++;
                     html += `
-                        <div class="lead-card-mini" onclick="window.location.href='partner-leads.html'" style="cursor:pointer; background:white; margin-bottom:10px; padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                        <div class="lead-card-mini" onclick="window.location.href='partner-leads.html'" style="cursor:pointer;">
                             <div>
-                                <div style="font-weight:700; color:#1E293B; margin-bottom:4px;">${order.service}</div>
-                                <div style="font-size:0.8rem; color:#64748B;">
-                                    <i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local Area'}
-                                </div>
+                                <div style="font-weight:700; color:#1E293B;">${order.service}</div>
+                                <div style="font-size:0.8rem; color:#64748B;">${order.customer?.area || 'Area N/A'}</div>
                             </div>
-                            <button class="btn-sm" style="background:#0D9488; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.75rem; font-weight:700;">VIEW</button>
+                            <button class="btn-sm">VIEW</button>
                         </div>
                     `;
                 }
             });
 
-            // डैशबोर्ड पर नंबर (Count) अपडेट करें
-            if(document.getElementById('newLeadsCount')) {
-                document.getElementById('newLeadsCount').innerText = count;
-            }
-
-            if(html === '') {
-                container.innerHTML = `<div style="text-align:center; color:#94A3B8; padding:20px;">No new leads for ${partnerCategory}</div>`;
-            } else {
-                container.innerHTML = html;
-            }
+            if(document.getElementById('newLeadsCount')) document.getElementById('newLeadsCount').innerText = count;
+            container.innerHTML = html || `<div style="text-align:center; padding:20px; color:#94A3B8;">No leads for your services</div>`;
         });
     }
+
+
 
     function logout() {
         auth.signOut().then(() => window.location.href = 'partner-login.html');
