@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0D9488">
-    <title>New Leads | Partner Portal</title>
+    <title>New Leads | Refine Home</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -22,15 +21,26 @@
             position: fixed; top: 0; width: 100%; height: 70px; 
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            display: flex; align-items: center;
+            display: flex; align-items: center; justify-content: space-between;
             padding: 0 20px; z-index: 100;
             border-bottom: 1px solid #CCFBF1;
         }
-        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
-        .back-btn { font-size: 1.2rem; margin-right: 15px; cursor: pointer; color: var(--p); border: none; background: none;}
+        .header-title { font-weight: 800; font-size: 1.3rem; }
+        .refresh-btn { 
+            width: 40px; height: 40px; border-radius: 50%; border:none; background:#F0FDFA; 
+            color:var(--p); font-size:1.1rem; cursor:pointer;
+        }
 
         .content { margin-top: 80px; padding: 0 20px; }
 
+        /* Status Bar */
+        .status-bar {
+            background: #E0F2FE; color: #0369A1; padding: 12px 15px; 
+            border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 10px; font-weight: 600;
+        }
+
+        /* Lead Cards */
         .lead-card {
             background: white; border-radius: 20px;
             padding: 20px; margin-bottom: 15px;
@@ -38,28 +48,80 @@
             border: 1px solid transparent;
             transition: all 0.2s; position: relative; overflow: hidden;
         }
-        .lead-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .lead-type { background: #F0FDFA; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--p); text-transform: uppercase; }
-        .lead-title { font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 8px; }
-        .lead-details { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #E2E8F0; }
-        .detail-item { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #64748B; font-weight: 500; }
+        
+        .lead-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .lead-type {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #F0FDFA; padding: 6px 12px;
+            border-radius: 20px; font-size: 0.75rem;
+            font-weight: 700; color: var(--p); text-transform: uppercase;
+        }
+        .lead-urgency {
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        
+        .lead-title { font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 8px; line-height: 1.4; }
+        
+        .lead-details {
+            display: flex; flex-direction: column; gap: 8px;
+            margin-bottom: 15px; padding-bottom: 15px;
+            border-bottom: 1px dashed #E2E8F0;
+        }
+        .detail-item {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.9rem; color: #64748B; font-weight: 500;
+        }
         .detail-item i { color: var(--p); width: 20px; text-align: center; }
-        .lead-footer { display: flex; justify-content: space-between; align-items: center; }
-        .lead-price { font-size: 1.3rem; font-weight: 800; color: var(--p); }
-        .btn-accept { background: var(--p); color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
 
-        /* Status Bar */
-        .status-bar { background: #E0F2FE; color: #0369A1; padding: 10px 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
+        .lead-footer {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .lead-price { font-size: 1.3rem; font-weight: 800; color: var(--p); }
+
+        .btn-accept {
+            background: var(--p); color: white;
+            border: none; padding: 10px 24px;
+            border-radius: 12px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+        }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 20px; color: #94A3B8; }
 
         /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: flex-end; justify-content: center; }
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 9999;
+            display: none; align-items: flex-end; justify-content: center;
+        }
         .modal-overlay.active { display: flex; }
-        .bottom-sheet { background: white; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 25px; animation: slideUp 0.3s ease; }
+        
+        .bottom-sheet {
+            background: white; width: 100%; max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            padding: 25px; animation: slideUp 0.3s ease;
+        }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .confirm-btn { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 20px; }
+        
+        .confirm-btn {
+            width: 100%; padding: 16px; background: var(--p); color: white;
+            border: none; border-radius: 14px; font-weight: 700; font-size: 1rem;
+            cursor: pointer; margin-top: 20px;
+        }
 
         /* Nav */
-        .nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-top: 1px solid #CCFBF1; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1; display: flex; justify-content: space-around; 
+            align-items: center; z-index: 100;
+        }
         .nav-item { text-align: center; color: #94A3B8; font-size: 0.7rem; font-weight: 700; }
         .nav-item.active { color: var(--p); }
         .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
@@ -71,9 +133,8 @@
 <body>
 
     <div class="header">
-        <button class="back-btn" onclick="window.location.href='partner-dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
-        <div class="header-title">Live Leads</div>
-        <button class="back-btn" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i></button>
+        <div class="header-title">Partner Leads</div>
+        <button class="refresh-btn" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i></button>
     </div>
 
     <div class="content">
@@ -82,9 +143,9 @@
         </div>
 
         <div id="leadsList">
-            <div style="text-align:center; padding:50px; color:#94A3B8;">
+            <div class="empty-state">
                 <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:15px;"></i>
-                <p>Looking for orders...</p>
+                <p>Syncing orders...</p>
             </div>
         </div>
     </div>
@@ -128,7 +189,6 @@
 
         // --- 2. YOUR EXACT CATEGORY KEYWORDS ---
         const categoryKeywords = {
-            // AB PAINTING MEIN HI SAB KUCH HAI (Paints + Waterproofing)
             'painting': [
                 // --- PAINT BRANDS & PRODUCTS ---
                 'asian', 'berger', 'dulux', 'nerolac', 'paint', 
@@ -137,45 +197,19 @@
                 'bison', 'rangoli', 'total', 'silk', 'glamor', 'breathe', 'easy', 'walmasta', 'weathercoat', 'long life',
                 'supercover', 'velvet', 'touch', 'living', 'diamond', 'weathershield', 'powerflex',
                 'beauty', 'smooth', 'pearls', 'impressions', 'eco', 'clean', 'excel', 'mica', 'marble', 'suraksha',
-                
                 // --- GENERAL PAINT TERMS ---
                 'wall', 'texture', 'putty', 'primer', 'distemper', 'enamel', 'whitewash', 'interior', 'exterior',
-
-                // --- WATERPROOFING KEYWORDS (Jo Painter ko dikhenge) ---
+                // --- WATERPROOFING KEYWORDS ---
                 'waterproof', 'leak', 'damp', 'seepage', 'terrace', 'roof', 'crack', 'tank', 
                 'dr fixit', 'roofseal', 'raincoat', 'crack x', 'dampguard', 
                 'smartcare', 'homeshield', 'seal-o-prime', 'coating', 'chemicals'
             ],
-
-            'electrician': [
-                'electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 
-                'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'
-            ],
-
-            'plumber': [
-                'plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 
-                'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'
-            ],
-
-            'ac': [
-                'ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 
-                'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'
-            ],
-
-            'cleaning': [
-                'clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 
-                'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'
-            ],
-
-            'carpenter': [
-                'carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 
-                'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'
-            ],
-
-            'pest': [
-                'pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 
-                'control', 'insect', 'spray', 'herbal', 'ant'
-            ]
+            'electrician': ['electric', 'fan', 'switch', 'socket', 'tube light', 'mcb', 'inverter', 'geyser', 'wiring', 'fault', 'chandelier', 'install', 'repair', 'light', 'current', 'power'],
+            'plumber': ['plumb', 'tap', 'washer', 'washbasin', 'blockage', 'sink', 'pipe', 'toilet', 'jet spray', 'water tank', 'shower', 'drain', 'leak', 'faucet', 'motor'],
+            'ac': ['ac ', 'air condition', 'split', 'window', 'gas', 'r32', 'r22', 'filling', 'pcb', 'compressor', 'cooling', 'service', 'install', 'uninstall'],
+            'cleaning': ['clean', 'deep', 'full home', '1bhk', '2bhk', '3bhk', 'bathroom', 'kitchen', 'sofa', 'carpet', 'fridge', 'dust', 'wash', 'mop', 'sanitiz'],
+            'carpenter': ['carpen', 'wood', 'door', 'lock', 'handle', 'drill', 'hang', 'hole', 'curtain', 'rod', 'drawer', 'channel', 'stopper', 'furniture', 'assembly', 'bed', 'dismantle', 'cupboard'],
+            'pest': ['pest', 'cockroach', 'termite', 'bed bug', 'rat', 'mouse', 'control', 'insect', 'spray', 'herbal', 'ant']
         };
 
         let currentPartnerId = null;
@@ -213,9 +247,9 @@
             });
         }
 
-        // --- 4. SYNC WITH ORDERS (FIXED) ---
+        // --- 4. SYNC WITH ORDERS (THIS IS THE FIX) ---
         function loadLiveOrders() {
-            // Ab hum 'orders' table read kar rahe hain jahan 'status' = 'pending' hai
+            // Hum 'orders' table read kar rahe hain jahan 'status' = 'pending' hai
             db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
                 const orders = snapshot.val() || {};
                 renderFilteredLeads(orders);
@@ -233,12 +267,9 @@
                 if (isServiceRelevant(order.service)) {
                     hasMatches = true;
                     
-                    // Determine Urgency
                     let urgency = 'medium';
                     if((order.service || '').toLowerCase().includes('leak')) urgency = 'high';
 
-                    // Data Mapping (Order -> Lead Display)
-                    // Note: 'order.slot' se date/time milega
                     const leadDate = order.slot?.date || 'Flexible';
                     const leadTime = order.slot?.time || 'Anytime';
                     const leadArea = order.customer?.area || 'Area N/A';
@@ -356,186 +387,6 @@
             el.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#16A34A"></i> <div>${msg}</div>`;
             box.appendChild(el);
             setTimeout(() => el.remove(), 3000);
-        }
-    </script>
-</body>
-</html>
-      }
-            });
-
-            if (!hasMatches) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon"><i class="fa-solid fa-filter" style="color: #CBD5E1;"></i></div>
-                        <h3 style="color: #64748B; margin-bottom: 8px;">No matching leads</h3>
-                        <p style="font-size: 0.9rem;">Waiting for new <b>${partnerCategory}</b> orders.</p>
-                    </div>
-                `;
-            } else {
-                list.innerHTML = html;
-            }
-        }
-
-        // --- 7. KEYWORD MATCHING ENGINE ---
-        function isServiceRelevant(serviceName) {
-            if (!serviceName) return false;
-            if (!partnerCategory || !categoryKeywords[partnerCategory]) return false;
-
-            const sName = serviceName.toLowerCase();
-            // Check if any keyword exists in service name
-            return categoryKeywords[partnerCategory].some(keyword => sName.includes(keyword.toLowerCase()));
-        }
-
-        // --- 8. LEAD DETAILS & MODAL ---
-        function showLeadDetail(orderId) {
-            // Get fresh data
-            db.ref('orders/' + orderId).once('value').then((snapshot) => {
-                const order = snapshot.val();
-                if (!order) return;
-                
-                selectedLeadId = orderId;
-                selectedLeadData = order;
-                
-                document.getElementById('modalTitle').textContent = order.service;
-                document.getElementById('modalBody').innerHTML = `
-                    <div class="detail-row">
-                        <span class="detail-label">Service Type</span>
-                        <span class="detail-value">${order.service}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Preferred Time</span>
-                        <span class="detail-value">${order.slot?.date} <br> ${order.slot?.time}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Location</span>
-                        <span class="detail-value">${order.customer?.address || ''}<br>${order.customer?.area || ''}</span>
-                    </div>
-                     <div class="detail-row">
-                        <span class="detail-label">Customer</span>
-                        <span class="detail-value">${order.customer?.name || 'Valued Customer'}</span>
-                    </div>
-                    <div class="detail-row" style="border-bottom:none; margin-top:10px;">
-                        <span class="detail-label" style="font-size:1.1rem; color:#1E293B;">Est. Earning</span>
-                        <span class="detail-value" style="color: var(--p); font-size:1.4rem;">₹${(order.total || 0).toLocaleString()}</span>
-                    </div>
-                    
-                    <div style="margin-top:20px; padding:15px; background:#F0FDFA; border-radius:12px; font-size:0.85rem; color:#0F766E; display:flex; gap:10px;">
-                        <i class="fa-solid fa-circle-info" style="margin-top:3px;"></i>
-                        <div>By accepting, you agree to visit the location at the scheduled time. Customer will be notified immediately.</div>
-                    </div>
-                `;
-                
-                openModal();
-            });
-        }
-
-        function openModal() { document.getElementById('leadModal').classList.add('active'); }
-        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
-
-        // --- 9. ACCEPT LEAD LOGIC ---
-        function acceptLead() {
-            if (!selectedLeadId || !currentPartnerId) return;
-            
-            const updates = {};
-            
-            // A. Update Order Status (Customer sees "Partner Assigned")
-            updates[`orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            updates[`orders/${selectedLeadId}/assignedAt`] = firebase.database.ServerValue.TIMESTAMP;
-
-            // B. Backup update in User Node
-            if (selectedLeadData.userId) {
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/status`] = 'assigned';
-                updates[`users/${selectedLeadData.userId}/orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            }
-
-            // C. Create Partner Job Entry
-            const jobData = {
-                ...selectedLeadData,
-                status: 'scheduled',
-                partnerId: currentPartnerId,
-                acceptedAt: firebase.database.ServerValue.TIMESTAMP,
-                startOtp: Math.floor(1000 + Math.random() * 9000) // Generate OTP
-            };
-            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
-
-            // Execute Updates
-            db.ref().update(updates)
-                .then(() => {
-                    showToast('Lead Accepted! Job Scheduled.', 'success');
-                    closeModal();
-                    setTimeout(() => window.location.href = 'partner-jobs.html', 1500);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    showToast('Error accepting lead.', 'error');
-                });
-        }
-
-        // --- 10. TOAST NOTIFICATION ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icon = type === 'success' ? 'fa-check' : 'fa-info';
-            
-            toast.innerHTML = `
-                <div class="toast-icon"><i class="fa-solid ${icon}"></i></div>
-                <div>
-                    <div style="font-weight: 700;">${type === 'success' ? 'Success!' : 'Notice'}</div>
-                    <div style="font-size: 0.85rem;">${message}</div>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
-        }
-    </script>
-</body>
-</html>
-       rejectedAt: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                showToast('Lead rejected', 'success');
-                loadLeads();
-            });
-        }
-
-        function showFilter() {
-            showToast('Filter options coming soon!', 'info');
-        }
-
-        // Toast
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icons = {
-                success: 'fa-circle-check',
-                error: 'fa-circle-xmark',
-                warning: 'fa-triangle-exclamation',
-                info: 'fa-circle-info'
-            };
-            
-            toast.innerHTML = `
-                <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
-                <div>
-                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">${type === 'success' ? 'Success!' : 'Info'}</div>
-                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
         }
     </script>
 </body>
