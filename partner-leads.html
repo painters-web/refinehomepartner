@@ -257,58 +257,73 @@
         }
 
         function renderFilteredLeads(orders) {
-            const list = document.getElementById('leadsList');
-            const leads = Object.entries(orders).reverse();
-            let hasMatches = false;
-            let html = '';
+    const list = document.getElementById('leadsList');
+    // Orders ko array mein badlein aur naye wale pehle dikhayein
+    const leads = Object.entries(orders).reverse();
+    let hasMatches = false;
+    let html = '';
 
-            leads.forEach(([id, order]) => {
-                // Check keywords match
-                if (isServiceRelevant(order.service)) {
-                    hasMatches = true;
-                    
-                    let urgency = 'medium';
-                    if((order.service || '').toLowerCase().includes('leak')) urgency = 'high';
+    // Maan lijiye aapne partner ki services list upar load kar li hai
+    // const partnerServices = ['painting', 'waterproofing', 'dr. fixit']; 
 
-                    const leadDate = order.slot?.date || 'Flexible';
-                    const leadTime = order.slot?.time || 'Anytime';
-                    const leadArea = order.customer?.area || 'Area N/A';
-                    const leadPrice = order.total || order.amount || 0;
+    leads.forEach(([id, order]) => {
+        // Sirf 'pending' orders dikhayein
+        if (order.status === 'pending') {
+            const sName = (order.service || '').toLowerCase();
+            let isMatch = false;
 
-                    html += `
-                        <div class="lead-card" onclick="showLeadDetail('${id}')">
-                            <div class="lead-header">
-                                <span class="lead-type"><i class="fa-solid fa-briefcase"></i> ${partnerCategory.toUpperCase()}</span>
-                                <div style="background:${urgency==='high'?'#FEF2F2':'#F0F9FF'}; color:${urgency==='high'?'#DC2626':'#0284C7'}; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">
-                                    ${urgency === 'high' ? 'Urgent' : 'New'}
-                                </div>
-                            </div>
-                            <div class="lead-title">${order.service}</div>
-                            <div class="lead-details">
-                                <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${leadDate}</div>
-                                <div class="detail-item"><i class="fa-solid fa-clock"></i> ${leadTime}</div>
-                                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${leadArea}</div>
-                            </div>
-                            <div class="lead-footer">
-                                <div class="lead-price">₹${leadPrice.toLocaleString()}</div>
-                                <button class="btn-accept">View</button>
-                            </div>
+            // --- DEEP MATCHING LOGIC ---
+            // 1. Agar partner ki koi bhi service customer ki service se match kare
+            if (Array.isArray(partnerServices)) {
+                isMatch = partnerServices.some(s => sName.includes(s.toLowerCase()));
+            }
+
+            // 2. Painting partner ke liye special keywords (extra safety)
+            if (!isMatch && partnerServices.includes('painting')) {
+                const paintKeywords = ['paint', 'wall', 'water', 'leak', 'putty', 'texture', 'dr', 'fixit'];
+                isMatch = paintKeywords.some(k => sName.includes(k));
+            }
+
+            if (isMatch) {
+                hasMatches = true;
+                
+                // Date aur Price fix
+                const displayDate = order.slot?.date || order.date || 'Flexible';
+                const displayPrice = order.total || order.amount || 0;
+
+                html += `
+                    <div class="lead-card" onclick="showLeadDetail('${id}')">
+                        <div class="lead-header">
+                            <span class="lead-type">NEW LEAD</span>
+                            <div class="urgency-tag">New</div>
                         </div>
-                    `;
-                }
-            });
-
-            if (!hasMatches) {
-                list.innerHTML = `
-                    <div style="text-align:center; padding:50px 20px; color:#94A3B8;">
-                        <i class="fa-solid fa-filter" style="font-size:3rem; color:#E2E8F0; margin-bottom:15px;"></i>
-                        <h3>No matching leads</h3>
-                        <p>Waiting for <b>${partnerCategory}</b> orders.</p>
-                    </div>`;
-            } else {
-                list.innerHTML = html;
+                        <div class="lead-title">${order.service}</div>
+                        <div class="lead-details">
+                            <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${displayDate}</div>
+                            <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local'}</div>
+                        </div>
+                        <div class="lead-footer">
+                            <div class="lead-price">₹${displayPrice.toLocaleString()}</div>
+                            <button class="btn-accept">View Details</button>
+                        </div>
+                    </div>
+                `;
             }
         }
+    });
+
+    if (!hasMatches) {
+        list.innerHTML = `
+            <div style="text-align:center; padding:40px; color:#94A3B8;">
+                <i class="fa-solid fa- couch" style="font-size:3rem; margin-bottom:15px;"></i>
+                <h3>No Leads Found</h3>
+                <p>Aapki services se match karti koi lead abhi nahi hai.</p>
+            </div>`;
+    } else {
+        list.innerHTML = html;
+    }
+}
+
 
         function isServiceRelevant(serviceName) {
             if (!serviceName) return false;
