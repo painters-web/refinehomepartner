@@ -34,7 +34,7 @@
         .lead-card-mini { 
             background: white; margin: 0 20px 10px; padding: 15px; border-radius: 16px; 
             display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid transparent;
         }
         .btn-sm { background: var(--p); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
 
@@ -48,7 +48,7 @@
 
     <div class="header">
         <div style="font-weight: 800; font-size: 1.2rem;">Dashboard</div>
-        <button onclick="logout()" style="background:none; border:none; color:var(--p);"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <button onclick="logout()" style="background:none; border:none; color:var(--p); font-size: 1.2rem;"><i class="fa-solid fa-right-from-bracket"></i></button>
     </div>
 
     <div class="profile-card">
@@ -77,7 +77,7 @@
 
     <div id="dashboardLeads">
         <div style="text-align: center; color: #94A3B8; padding: 20px;">
-            <i class="fa-solid fa-spinner fa-spin"></i> Finding leads...
+            <i class="fa-solid fa-spinner fa-spin"></i> Looking for orders...
         </div>
     </div>
 
@@ -130,7 +130,7 @@
             });
         }
 
-        // 2. LOAD LEADS FOR DASHBOARD (Connected to ORDERS)
+        // 2. LOAD LEADS FOR DASHBOARD (Fix: Connected to ORDERS table)
         function loadDashboardLeads() {
             // Hum 'orders' folder se last 5 pending orders uthayenge
             db.ref('orders').orderByChild('status').equalTo('pending').limitToLast(5).on('value', (snapshot) => {
@@ -143,16 +143,19 @@
                 }
 
                 let html = '';
-                // Simple keyword check for Dashboard Widget
+                // Simple filter for Dashboard
                 Object.entries(orders).reverse().forEach(([id, order]) => {
                     const sName = (order.service || '').toLowerCase();
                     
                     // Check agar service name partner ki category se match kare
-                    // Ya agar painting category hai to "paint", "waterproof" sab dikhaye
                     let isMatch = false;
+                    
+                    // Agar Partner category 'painting' hai to painting, water, leak sab dikhao
                     if (partnerCategory === 'painting') {
-                         if (sName.includes('paint') || sName.includes('wall') || sName.includes('water') || sName.includes('leak')) isMatch = true;
-                    } else if (sName.includes(partnerCategory)) {
+                         if (sName.includes('paint') || sName.includes('wall') || sName.includes('water') || sName.includes('leak') || sName.includes('dr')) isMatch = true;
+                    } 
+                    // Baaki categories ke liye simple match
+                    else if (partnerCategory && sName.includes(partnerCategory)) {
                         isMatch = true;
                     }
 
@@ -172,7 +175,7 @@
                 });
 
                 if(html === '') {
-                    container.innerHTML = `<div style="text-align:center; color:#94A3B8; padding:20px;">Waiting for new leads...</div>`;
+                    container.innerHTML = `<div style="text-align:center; color:#94A3B8; padding:20px;">Waiting for ${partnerCategory} leads...</div>`;
                 } else {
                     container.innerHTML = html;
                 }
