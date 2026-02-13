@@ -4,63 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Leads | Refine Home</title>
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
-        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
-        .header { position: fixed; top: 0; width: 100%; height: 70px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 100; border-bottom: 1px solid #CCFBF1; }
-        .content { margin-top: 80px; padding: 0 20px; }
-        .status-bar { background: #E0F2FE; color: #0369A1; padding: 12px 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; }
-        .lead-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .lead-title { font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 8px; }
-        .detail-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #64748B; margin-bottom: 6px; }
-        .detail-item i { color: var(--p); width: 15px; }
-        .btn-accept { background: var(--p); color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: flex-end; justify-content: center; }
-        .modal-overlay.active { display: flex; }
-        .bottom-sheet { background: white; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 25px; }
-        .nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #CCFBF1; }
-        .nav-item { text-align: center; color: #94A3B8; font-size: 0.7rem; font-weight: 700; text-decoration: none; }
-        .nav-item.active { color: var(--p); }
-        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 12px 20px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 10001; display: none; }
+        :root { --p: #0D9488; --bg: #F0FDFA; }
+        body { background: var(--bg); font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 90px; }
+        .header { background: white; padding: 20px; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; font-weight: 800; font-size: 1.2rem; }
+        .lead-card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--p); }
+        .btn-accept { width: 100%; background: var(--p); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 700; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div style="font-weight: 800; font-size: 1.3rem;">New Leads</div>
-        <button onclick="window.location.reload()" style="background:none; border:none; color:var(--p);"><i class="fa-solid fa-rotate-right"></i></button>
-    </div>
-
-    <div class="content">
-        <div class="status-bar" id="partnerInfoBar">Syncing Profile...</div>
-        <div id="leadsList">Searching for leads...</div>
-    </div>
-
-    <div class="modal-overlay" id="leadModal">
-        <div class="bottom-sheet">
-            <h2 style="margin-bottom:20px;">Lead Details</h2>
-            <div id="modalBody" style="margin-bottom:20px;"></div>
-            <button class="btn-accept" style="width:100%; padding:15px;" onclick="acceptLead()">Accept Job</button>
-            <button onclick="closeModal()" style="width:100%; background:none; border:none; margin-top:10px; color:#64748B;">Close</button>
-        </div>
-    </div>
-
-    <div class="nav">
-        <a href="partner-dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i>Home</a>
-        <a href="partner-leads.html" class="nav-item active"><i class="fa-solid fa-bolt"></i>Leads</a>
-        <a href="partner-jobs.html" class="nav-item"><i class="fa-solid fa-briefcase"></i>Jobs</a>
-        <a href="partner-profile.html" class="nav-item"><i class="fa-solid fa-user"></i>Profile</a>
-    </div>
+    <div class="header">Partner Leads</div>
+    <div id="leadsList"><div style="text-align:center; padding:50px; color:#94A3B8;">Searching for leads...</div></div>
 
     <script>
         const firebaseConfig = {
@@ -76,119 +35,62 @@
         const db = firebase.database();
         const auth = firebase.auth();
 
-        // --- AAPKE KEYWORDS (As per Dashboard File) ---
         const categoryKeywords = {
-            'painting': ['asian', 'berger', 'dulux', 'nerolac', 'paint', 'tractor', 'emulsion', 'apcolite', 'premium', 'royale', 'wall', 'texture', 'putty', 'primer', 'distemper', 'waterproof', 'leak', 'damp', 'seepage', 'dr fixit', 'roof', 'crack'],
-            'electrician': ['electric', 'fan', 'switch', 'socket', 'light', 'wire', 'geyser', 'inverter'],
-            'plumber': ['plumb', 'tap', 'leak', 'pipe', 'sink', 'toilet', 'tank', 'motor'],
-            'ac': ['ac ', 'cooling', 'gas', 'service', 'split', 'window'],
-            'cleaning': ['clean', 'wash', 'dust', 'sofa', 'deep', 'bathroom'],
-            'carpenter': ['wood', 'door', 'lock', 'furniture', 'handle'],
-            'pest': ['pest', 'cockroach', 'termite', 'ant', 'spray']
+            'painting': ['paint', 'tractor', 'asian', 'wall', 'water', 'leak', 'putty', 'texture', 'dr fixit', 'royal'],
+            'electrician': ['electric', 'fan', 'switch'],
+            'plumber': ['plumb', 'tap', 'pipe']
         };
 
-        let currentPartnerId = null;
-        let partnerCategory = null;
-        let selectedLeadId = null;
-        let selectedLeadData = null;
+        let myCategory = null;
 
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(user => {
             if (user) {
-                currentPartnerId = user.uid;
-                loadPartnerProfile(user.uid);
-            } else {
-                window.location.href = 'index.html';
-            }
+                db.ref('partners/' + user.uid).on('value', snap => {
+                    const data = snap.val();
+                    if(data) {
+                        myCategory = (data.category || "").toLowerCase();
+                        loadLeads();
+                    }
+                });
+            } else { window.location.href = 'index.html'; }
         });
 
-        function loadPartnerProfile(uid) {
-            db.ref(`partners/${uid}`).on('value', (snap) => {
-                const p = snap.val();
-                if(p) {
-                    partnerCategory = (p.category || "service").toLowerCase();
-                    document.getElementById('partnerInfoBar').innerHTML = `<i class="fa-solid fa-user-check"></i> Connected: <b>${partnerCategory.toUpperCase()}</b>`;
-                    loadLiveOrders();
-                }
-            });
-        }
-
-        function loadLiveOrders() {
-            // Seedha 'orders' folder se pending leads uthana
-            db.ref('orders').orderByChild('status').equalTo('pending').on('value', (snapshot) => {
+        function loadLeads() {
+            // FIX: "orders" table check
+            db.ref('orders').orderByChild('status').equalTo('pending').on('value', snapshot => {
                 const orders = snapshot.val() || {};
-                renderFilteredLeads(orders);
-            });
-        }
+                const list = document.getElementById('leadsList');
+                let html = '';
+                let found = false;
 
-        function renderFilteredLeads(orders) {
-            const list = document.getElementById('leadsList');
-            const leads = Object.entries(orders).reverse();
-            let html = '';
-            let found = false;
+                Object.entries(orders).reverse().forEach(([id, order]) => {
+                    const sName = (order.service || "").toLowerCase();
+                    
+                    // Matching Logic
+                    let isMatch = false;
+                    if (myCategory === 'painting') {
+                        isMatch = categoryKeywords.painting.some(k => sName.includes(k));
+                    } else if (myCategory && sName.includes(myCategory)) {
+                        isMatch = true;
+                    }
 
-            leads.forEach(([id, order]) => {
-                const sName = (order.service || '').toLowerCase();
-                let isMatch = false;
+                    if (isMatch) {
+                        found = true;
+                        html += `
+                            <div class="lead-card">
+                                <div style="font-weight:800; font-size:1.1rem; color:#1E293B;">${order.service}</div>
+                                <div style="margin:10px 0; color:#64748B; font-size:0.9rem;">
+                                    <i class="fa-solid fa-location-dot"></i> ${order.customer?.area || 'Local Area'} (${order.customer?.address || ''})
+                                </div>
+                                <div style="font-size:1.3rem; font-weight:800; color:var(--p);">₹${order.total || 0}</div>
+                                <button class="btn-accept">Accept Job</button>
+                            </div>`;
+                    }
+                });
 
-                // Keyword matching logic
-                if (partnerCategory && categoryKeywords[partnerCategory]) {
-                    isMatch = categoryKeywords[partnerCategory].some(k => sName.includes(k));
-                }
-
-                if (isMatch) {
-                    found = true;
-                    // Address logic from your dashboard file
-                    const addr = order.customer?.address || order.address || "Check details";
-                    const area = order.customer?.area || "Local Area";
-
-                    html += `
-                        <div class="lead-card" onclick="showLeadDetail('${id}')">
-                            <div class="lead-title">${order.service}</div>
-                            <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ${area} (${addr})</div>
-                            <div class="detail-item"><i class="fa-solid fa-calendar"></i> ${order.slot?.date || 'Flexible'}</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
-                                <div style="font-size:1.4rem; font-weight:800; color:var(--p);">₹${(order.total || 0).toLocaleString()}</div>
-                                <button class="btn-accept">Details</button>
-                            </div>
-                        </div>`;
-                }
-            });
-
-            list.innerHTML = found ? html : '<div style="text-align:center; padding:40px; color:#94A3B8;">No leads match your category.</div>';
-        }
-
-        function showLeadDetail(id) {
-            db.ref('orders/' + id).once('value').then((snap) => {
-                const order = snap.val();
-                selectedLeadId = id;
-                selectedLeadData = order;
-                document.getElementById('modalBody').innerHTML = `
-                    <p><b>Service:</b> ${order.service}</p>
-                    <p><b>Location:</b> ${order.customer?.address || ''}, ${order.customer?.area || ''}</p>
-                    <p><b>Date/Time:</b> ${order.slot?.date} at ${order.slot?.time}</p>
-                    <h2 style="color:var(--p); margin-top:10px;">Total: ₹${(order.total || 0).toLocaleString()}</h2>
-                `;
-                document.getElementById('leadModal').classList.add('active');
-            });
-        }
-
-        function closeModal() { document.getElementById('leadModal').classList.remove('active'); }
-
-        function acceptLead() {
-            if (!selectedLeadId) return;
-            const updates = {};
-            updates[`orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`orders/${selectedLeadId}/partnerId`] = currentPartnerId;
-            
-            const jobData = { ...selectedLeadData, status: 'scheduled', partnerId: currentPartnerId, acceptedAt: firebase.database.ServerValue.TIMESTAMP };
-            updates[`partnerJobs/${currentPartnerId}/${selectedLeadId}`] = jobData;
-
-            db.ref().update(updates).then(() => {
-                alert('Lead Accepted!');
-                window.location.href = 'partner-jobs.html';
+                list.innerHTML = found ? html : '<div style="text-align:center; padding:50px; color:#94A3B8;">No matching leads right now</div>';
             });
         }
     </script>
 </body>
 </html>
-
