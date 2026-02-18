@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>Partner Home | Refine Home Painting</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .menu-btn {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: #F0FDFA; border: none; color: var(--p);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+        .header-title { font-weight: 800; font-size: 1.2rem; }
+        .notification-btn {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: #F0FDFA; border: none; color: var(--p);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; position: relative;
+        }
+        .notification-badge {
+            position: absolute; top: -2px; right: -2px;
+            width: 20px; height: 20px; background: #EF4444;
+            border-radius: 50%; color: white; font-size: 0.7rem;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+        }
+
+        .content { margin-top: 90px; padding: 0 20px; }
+
+        /* Partner Stats Card */
+        .stats-card {
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            border-radius: 20px; padding: 20px;
+            color: white; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.3);
+        }
+        .stats-header {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 15px;
+        }
+        .partner-avatar {
+            width: 50px; height: 50px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+            background: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--p);
+        }
+        .partner-info { flex: 1; }
+        .partner-name { font-weight: 700; font-size: 1.1rem; }
+        .partner-category { font-size: 0.8rem; opacity: 0.9; }
+        .status-badge {
+            background: rgba(255,255,255,0.2); padding: 5px 12px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .stats-row {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 15px; padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; }
+        .stat-label { font-size: 0.7rem; opacity: 0.9; }
+
+        /* Section Header */
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: #1E293B; }
+        .view-all {
+            color: var(--p); font-size: 0.85rem; font-weight: 600;
+            text-decoration: none; display: flex; align-items: center; gap: 5px;
+        }
+
+        /* Lead Cards */
+        .lead-card {
+            background: white; border-radius: 20px;
+            padding: 18px; margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 2px solid transparent; transition: all 0.2s;
+        }
+        .lead-card:hover { border-color: var(--p); }
+        
+        .lead-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .lead-type {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #F0FDFA; padding: 5px 12px;
+            border-radius: 20px; font-size: 0.75rem;
+            font-weight: 700; color: var(--p);
+        }
+        .lead-time { font-size: 0.75rem; color: #94A3B8; }
+
+        .lead-title { font-size: 1rem; font-weight: 700; color: #1E293B; margin-bottom: 10px; }
+        
+        .lead-details {
+            display: flex; flex-wrap: wrap; gap: 12px;
+            margin-bottom: 12px;
+        }
+        .detail-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.8rem; color: #64748B;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex; gap: 8px; margin-bottom: 12px;
+        }
+        .action-chip {
+            flex: 1; padding: 10px;
+            background: #F8FAFC; border: 1px solid #E2E8F0;
+            border-radius: 12px; text-align: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .action-chip:hover { background: #F0FDFA; border-color: var(--p); }
+        .action-chip i { font-size: 1rem; margin-bottom: 4px; }
+        .action-chip span { display: block; font-size: 0.7rem; font-weight: 600; color: #475569; }
+
+        .lead-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 12px; border-top: 1px dashed #E2E8F0;
+        }
+        .lead-price {
+            font-size: 1.2rem; font-weight: 800; color: var(--p);
+        }
+        .btn-accept {
+            background: var(--p); color: white;
+            border: none; padding: 10px 20px;
+            border-radius: 10px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center;
+            gap: 6px; font-size: 0.9rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 50px 20px;
+            color: #94A3B8;
+        }
+        .empty-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
+            border-radius: 50%; margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+        }
+
+        /* Bottom Nav */
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; padding-bottom: 10px;
+        }
+        .nav-item { 
+            text-align: center; color: #94A3B8; 
+            font-size: 0.7rem; font-weight: 700;
+            width: 70px; cursor: pointer; padding: 10px;
+            border-radius: 16px; transition: all 0.2s;
+        }
+        .nav-item.active { 
+            color: var(--p); background: #F0FDFA;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 10001;
+            display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: white; padding: 16px 20px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: flex; align-items: center; gap: 12px;
+            min-width: 300px; max-width: 90vw;
+            transform: translateY(-100px); opacity: 0;
+            transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: all; border-left: 4px solid var(--p);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left-color: #22C55E; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <button class="menu-btn" onclick="toggleMenu()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="header-title">New Leads</div>
+        </div>
+        <button class="notification-btn" onclick="showNotifications()">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notification-badge" id="notifCount" style="display: none;">0</span>
+        </button>
+    </div>
+
+    <div class="content">
+        <!-- Partner Stats -->
+        <div class="stats-card">
+            <div class="stats-header">
+                <div class="partner-avatar" id="partnerAvatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="partner-info">
+                    <div class="partner-name" id="partnerName">Loading...</div>
+                    <div class="partner-category" id="partnerCategory">...</div>
+                </div>
+                <span class="status-badge"><i class="fa-solid fa-circle" style="font-size: 6px; color: #22C55E;"></i> Online</span>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value" id="todayEarnings">₹0</div>
+                    <div class="stat-label">Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="weeklyEarnings">₹0</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalJobs">0</div>
+                    <div class="stat-label">Jobs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Leads Section -->
+        <div class="section-header">
+            <div class="section-title">
+                <i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> New Leads
+            </div>
+            <a href="partner-jobs.html" class="view-all">
+                My Jobs <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <div id="leadsList">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-spinner fa-spin" style="color: var(--p);"></i></div>
+                <p>Loading leads...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="nav">
+        <div class="nav-item active" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-ratings.html'">
+            <i class="fa-solid fa-star"></i>Reviews
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-payout.html'">
+            <i class="fa-solid fa-wallet"></i>Payout
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let currentPartner = null;
+        let partnerId = null;
+        let newLeadsCount = 0;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                partnerId = user.uid;
+                loadPartnerData(user.uid);
+                loadLeads(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function loadPartnerData(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                const partner = snapshot.val();
+                if (partner) {
+                    currentPartner = partner;
+                    document.getElementById('partnerName').textContent = partner.name || 'Partner';
+                    document.getElementById('partnerCategory').textContent = (partner.category || 'General').toUpperCase();
+                    document.getElementById('todayEarnings').textContent = '₹' + (partner.todayEarnings || 0);
+                    document.getElementById('weeklyEarnings').textContent = '₹' + (partner.weeklyEarnings || 0);
+                    document.getElementById('totalJobs').textContent = partner.totalJobs || 0;
+                    
+                    if (partner.photoURL) {
+                        document.getElementById('partnerAvatar').innerHTML = '<img src="' + partner.photoURL + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+                    }
+                }
+            });
+        }
+
+        function loadLeads(uid) {
+            db.ref('partners/' + uid).once('value').then((snap) => {
+                const partner = snap.val();
+                if (!partner) return;
+
+                // Only load leads matching partner's category
+                db.ref('leads').orderByChild('category').equalTo(partner.category).on('value', (snapshot) => {
+                    const leads = snapshot.val() || {};
+                    
+                    // Filter out leads where customer already paid or partner has ongoing visit
+                    const filteredLeads = {};
+                    Object.entries(leads).forEach(([id, lead]) => {
+                        if (lead.status === 'new' && !lead.customerPaid && !partner.hasActiveVisit) {
+                            filteredLeads[id] = lead;
+                        }
+                    });
+
+                    renderLeads(filteredLeads);
+                    
+                    // Update notification count
+                    newLeadsCount = Object.keys(filteredLeads).length;
+                    const badge = document.getElementById('notifCount');
+                    if (newLeadsCount > 0) {
+                        badge.textContent = newLeadsCount;
+                        badge.style.display = 'flex';
+                        
+                        // Play sound for new leads
+                        if (newLeadsCount > parseInt(localStorage.getItem('lastLeadCount') || 0)) {
+                            playNewLeadSound();
+                        }
+                        localStorage.setItem('lastLeadCount', newLeadsCount);
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function playNewLeadSound() {
+            // Create notification sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Play a pleasant chime
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C major arpeggio
+            notes.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    osc.start(audioContext.currentTime);
+                    osc.stop(audioContext.currentTime + 0.3);
+                }, i * 100);
+            });
+        }
+
+        function renderLeads(leads) {
+            const list = document.getElementById('leadsList');
+            const leadsArray = Object.entries(leads);
+
+            if (leadsArray.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fa-solid fa-inbox" style="color: #CBD5E1;"></i></div>
+                        <h3 style="color: #64748B; margin-bottom: 8px;">No new leads</h3>
+                        <p style="font-size: 0.85rem;">Check back later for new opportunities</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = leadsArray.map(([id, lead]) => {
+                const timeAgo = getTimeAgo(lead.createdAt);
+                
+                return `
+                    <div class="lead-card">
+                        <div class="lead-header">
+                            <span class="lead-type">
+                                <i class="fa-solid ${getCategoryIcon(lead.category)}"></i>
+                                ${lead.category || 'Service'}
+                            </span>
+                            <span class="lead-time">${timeAgo}</span>
+                        </div>
+                        <div class="lead-title">${lead.service || 'Home Service'}</div>
+                        <div class="lead-details">
+                            <div class="detail-item">
+                                <i class="fa-solid fa-location-dot" style="color: var(--p);"></i>
+                                ${lead.area || 'Area N/A'}
+                            </div>
+                            <div class="detail-item">
+                                <i class="fa-solid fa-calendar" style="color: var(--p);"></i>
+                                ${lead.preferredDate || 'Flexible'}
+                            </div>
+                            <div class="detail-item">
+                                <i class="fa-solid fa-clock" style="color: var(--p);"></i>
+                                ${lead.preferredTime || 'Anytime'}
+                            </div>
+                        </div>
+                        
+                        <div class="quick-actions">
+                            <div class="action-chip" onclick="callCustomer('${lead.customerPhone}')">
+                                <i class="fa-solid fa-phone" style="color: #22C55E;"></i>
+                                <span>Call</span>
+                            </div>
+                            <div class="action-chip" onclick="getDirections('${lead.address}')">
+                                <i class="fa-solid fa-location-arrow" style="color: #2563EB;"></i>
+                                <span>Direction</span>
+                            </div>
+                            <div class="action-chip" onclick="helpCustomer('${id}')">
+                                <i class="fa-solid fa-headset" style="color: #F59E0B;"></i>
+                                <span>Help</span>
+                            </div>
+                        </div>
+
+                        <div class="lead-footer">
+                            <div class="lead-price">₹${(lead.budget || 0).toLocaleString()}</div>
+                            <button class="btn-accept" onclick="acceptLead('${id}')">
+                                <i class="fa-solid fa-check"></i> Accept
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                painting: 'fa-paint-roller',
+                waterproofing: 'fa-cloud-showers-heavy',
+                ac: 'fa-snowflake',
+                plumbing: 'fa-faucet-drip',
+                electrician: 'fa-bolt',
+                carpenter: 'fa-hammer',
+                cleaning: 'fa-broom',
+                pest: 'fa-bug'
+            };
+            return icons[category] || 'fa-tools';
+        }
+
+        function getTimeAgo(timestamp) {
+            if (!timestamp) return 'Just now';
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + ' min ago';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + ' hours ago';
+            return Math.floor(hours / 24) + ' days ago';
+        }
+
+        function callCustomer(phone) {
+            if (phone) window.location.href = 'tel:' + phone;
+            else showToast('Phone number not available', 'error');
+        }
+
+        function getDirections(address) {
+            if (address) {
+                const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
+                window.open(url, '_blank');
+            } else {
+                showToast('Address not available', 'error');
+            }
+        }
+
+        function helpCustomer(leadId) {
+            window.location.href = 'https://wa.me/919711904092?text=Need help with lead: ' + leadId;
+        }
+
+        function acceptLead(leadId) {
+            db.ref('leads/' + leadId).once('value').then((snap) => {
+                const lead = snap.val();
+                if (!lead) return;
+
+                // Move to partner's jobs
+                const jobData = {
+                    ...lead,
+                    status: 'scheduled',
+                    partnerId: partnerId,
+                    acceptedAt: firebase.database.ServerValue.TIMESTAMP,
+                    startOtp: Math.floor(1000 + Math.random() * 9000)
+                };
+
+                // Save to partner jobs
+                db.ref('partnerJobs/' + partnerId + '/' + leadId).set(jobData);
+                
+                // Remove from leads
+                db.ref('leads/' + leadId).remove();
+                
+                // Update partner's active status
+                db.ref('partners/' + partnerId).update({ hasActiveVisit: true });
+
+                showToast('Lead accepted! Check My Jobs.', 'success');
+                
+                // Redirect to jobs page
+                setTimeout(() => {
+                    window.location.href = 'partner-jobs.html';
+                }, 1500);
+            });
+        }
+
+        function toggleMenu() {
+            showToast('Menu coming soon!', 'info');
+        }
+
+        function showNotifications() {
+            showToast('No new notifications', 'info');
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">Success!</div>
+                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+        }
+    </script>
+</body>
+</html>

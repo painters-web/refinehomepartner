@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>My Jobs | Partner Portal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .back-btn { 
+            width: 42px; height: 42px; border-radius: 12px;
+            background: #F0FDFA; border: none; color: var(--p);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-right: 15px;
+        }
+        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
+
+        .content { margin-top: 90px; padding: 0 20px; }
+
+        /* Tabs */
+        .tabs-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 15px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .tab-pill {
+            padding: 10px 20px; border-radius: 24px;
+            font-size: 0.85rem; font-weight: 600;
+            background: white; color: #64748B;
+            white-space: nowrap; cursor: pointer;
+            border: 2px solid #E2E8F0; transition: all 0.2s;
+        }
+        .tab-pill.active {
+            background: var(--p); color: white;
+            border-color: var(--p);
+        }
+
+        /* Job Cards */
+        .job-card {
+            background: white; border-radius: 20px;
+            padding: 18px; margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .job-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .job-status {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .status-scheduled { background: #FEF3C7; color: #D97706; }
+        .status-ongoing { background: #DBEAFE; color: #2563EB; }
+        .status-completed { background: #DCFCE7; color: #16A34A; }
+        
+        .job-id { font-size: 0.75rem; color: #94A3B8; }
+        .job-title { font-size: 1.05rem; font-weight: 700; color: #1E293B; margin-bottom: 10px; }
+        
+        .job-details { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .detail-item {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.8rem; color: #64748B;
+        }
+
+        /* Customer Info */
+        .customer-bar {
+            background: #F8FAFC; border-radius: 12px;
+            padding: 12px; display: flex; align-items: center;
+            gap: 12px; margin-bottom: 12px;
+        }
+        .customer-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700;
+        }
+        .customer-info { flex: 1; }
+        .customer-name { font-weight: 700; color: #1E293B; font-size: 0.95rem; }
+        .customer-phone { font-size: 0.8rem; color: #64748B; }
+        .action-btns { display: flex; gap: 8px; }
+        .icon-btn {
+            width: 36px; height: 36px; border-radius: 10px;
+            border: none; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 0.9rem;
+        }
+        .icon-btn.call { background: #DCFCE7; color: #16A34A; }
+        .icon-btn.direction { background: #DBEAFE; color: #2563EB; }
+        .icon-btn.help { background: #FEF3C7; color: #D97706; }
+
+        /* Start Job Button */
+        .btn-start {
+            width: 100%; padding: 14px;
+            background: var(--p); color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* Quote Calculator (Painting/Waterproofing) */
+        .quote-section {
+            background: linear-gradient(135deg, #F0FDFA, #CCFBF1);
+            border-radius: 16px; padding: 15px;
+            margin-top: 12px; display: none;
+        }
+        .quote-title {
+            font-weight: 700; color: #1E293B; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .calc-row {
+            display: flex; gap: 10px; margin-bottom: 10px;
+        }
+        .calc-select, .calc-input {
+            flex: 1; padding: 12px;
+            border: 2px solid #E2E8F0; border-radius: 10px;
+            outline: none; font-size: 0.9rem;
+        }
+        .calc-result {
+            background: white; padding: 15px;
+            border-radius: 12px; text-align: center;
+            margin-top: 10px;
+        }
+        .calc-amount { font-size: 1.8rem; font-weight: 800; color: var(--p); }
+        .btn-share-quote {
+            width: 100%; padding: 12px;
+            background: var(--p); color: white;
+            border: none; border-radius: 10px;
+            font-weight: 700; cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Service Add-ons (Other categories) */
+        .addons-section {
+            background: #F8FAFC; border-radius: 16px;
+            padding: 15px; margin-top: 12px; display: none;
+        }
+        .addons-title {
+            font-weight: 700; color: #1E293B; margin-bottom: 12px;
+        }
+        .addon-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; background: white;
+            border-radius: 10px; margin-bottom: 8px;
+        }
+        .addon-name { font-weight: 600; color: #475569; font-size: 0.9rem; }
+        .addon-price { font-weight: 700; color: var(--p); }
+        .btn-add-addon {
+            padding: 6px 12px; background: var(--p);
+            color: white; border: none; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        }
+
+        /* Payment Section */
+        .payment-section {
+            background: #F0FDFA; border-radius: 16px;
+            padding: 15px; margin-top: 12px;
+        }
+        .payment-title {
+            font-weight: 700; color: #1E293B; margin-bottom: 12px;
+        }
+        .payment-methods { display: flex; gap: 10px; }
+        .payment-btn {
+            flex: 1; padding: 12px;
+            border: 2px solid #E2E8F0; border-radius: 12px;
+            background: white; cursor: pointer;
+            text-align: center; transition: all 0.2s;
+        }
+        .payment-btn:hover { border-color: var(--p); }
+        .payment-btn i { font-size: 1.3rem; margin-bottom: 5px; }
+        .payment-btn span { display: block; font-size: 0.8rem; font-weight: 600; }
+
+        /* Checklist */
+        .checklist-section {
+            background: white; border-radius: 16px;
+            padding: 15px; margin-top: 12px;
+            border: 2px solid #E2E8F0;
+        }
+        .checklist-title {
+            font-weight: 700; color: #1E293B; margin-bottom: 12px;
+        }
+        .checklist-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid #F1F5F9;
+        }
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-checkbox {
+            width: 22px; height: 22px; border-radius: 6px;
+            border: 2px solid #CBD5E1; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .checklist-checkbox.checked {
+            background: var(--p); border-color: var(--p); color: white;
+        }
+        .checklist-text { flex: 1; font-size: 0.9rem; color: #475569; }
+        .btn-complete {
+            width: 100%; padding: 14px;
+            background: #CBD5E1; color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: not-allowed;
+            margin-top: 12px;
+        }
+        .btn-complete.active {
+            background: #22C55E; cursor: pointer;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 50px 20px;
+            color: #94A3B8;
+        }
+        .empty-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
+            border-radius: 50%; margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+        }
+
+        /* Bottom Nav */
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; padding-bottom: 10px;
+        }
+        .nav-item { 
+            text-align: center; color: #94A3B8; 
+            font-size: 0.7rem; font-weight: 700;
+            width: 70px; cursor: pointer; padding: 10px;
+            border-radius: 16px; transition: all 0.2s;
+        }
+        .nav-item.active { 
+            color: var(--p); background: #F0FDFA;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 9999;
+            display: none; align-items: flex-end; justify-content: center;
+            padding: 0; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .bottom-sheet {
+            background: white; width: 100%; max-width: 480px;
+            border-radius: 24px 24px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            max-height: 90vh; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .modal-overlay.active .bottom-sheet { transform: translateY(0); }
+        
+        .sheet-header {
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            color: white; padding: 25px 20px; position: relative;
+        }
+        .sheet-close {
+            position: absolute; top: 15px; right: 15px;
+            width: 36px; height: 36px; background: rgba(255,255,255,0.2);
+            border: none; border-radius: 50%; color: white;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .sheet-title { font-size: 1.3rem; font-weight: 700; }
+        .sheet-body { padding: 25px; overflow-y: auto; flex: 1; }
+
+        /* OTP Input */
+        .otp-section { text-align: center; }
+        .otp-label { color: #64748B; margin-bottom: 15px; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .otp-input {
+            width: 50px; height: 55px; border: 2px solid #E2E8F0;
+            border-radius: 12px; text-align: center; font-size: 1.5rem;
+            font-weight: 700; outline: none;
+        }
+        .otp-input:focus { border-color: var(--p); }
+        .btn-verify {
+            width: 100%; padding: 14px;
+            background: var(--p); color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer;
+        }
+
+        /* Feedback Popup */
+        .feedback-popup {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white; border-radius: 24px;
+            padding: 30px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 10000; transition: transform 0.3s ease;
+        }
+        .feedback-popup.show { transform: translate(-50%, -50%) scale(1); }
+        .feedback-icon {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; font-size: 2.5rem; color: white;
+        }
+        .feedback-title { font-size: 1.5rem; font-weight: 800; color: #1E293B; }
+        .feedback-text { color: #64748B; margin-top: 10px; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 10001;
+            display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: white; padding: 16px 20px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: flex; align-items: center; gap: 12px;
+            min-width: 300px; max-width: 90vw;
+            transform: translateY(-100px); opacity: 0;
+            transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: all; border-left: 4px solid var(--p);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left-color: #22C55E; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="header-title">My Jobs</div>
+    </div>
+
+    <div class="content">
+        <!-- Tabs -->
+        <div class="tabs-scroll">
+            <div class="tab-pill active" onclick="filterJobs('all', this)">All</div>
+            <div class="tab-pill" onclick="filterJobs('scheduled', this)">Scheduled</div>
+            <div class="tab-pill" onclick="filterJobs('ongoing', this)">Ongoing</div>
+            <div class="tab-pill" onclick="filterJobs('completed', this)">Completed</div>
+        </div>
+
+        <!-- Jobs List -->
+        <div id="jobsList">
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-spinner fa-spin" style="color: var(--p);"></i></div>
+                <p>Loading jobs...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Job Modal (OTP/Location) -->
+    <div class="modal-overlay" id="startJobModal">
+        <div class="bottom-sheet">
+            <div class="sheet-header">
+                <button class="sheet-close" onclick="closeModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="sheet-title"><i class="fa-solid fa-play"></i> Start Job</div>
+                <p style="opacity: 0.9; margin-top: 5px;">Verify to begin work</p>
+            </div>
+            <div class="sheet-body">
+                <div class="otp-section">
+                    <div class="otp-label">Enter last 4 digits of customer's phone</div>
+                    <div class="otp-inputs">
+                        <input type="text" class="otp-input" maxlength="1" onkeyup="moveOtp(this, 1)">
+                        <input type="text" class="otp-input" maxlength="1" onkeyup="moveOtp(this, 2)">
+                        <input type="text" class="otp-input" maxlength="1" onkeyup="moveOtp(this, 3)">
+                        <input type="text" class="otp-input" maxlength="1" onkeyup="moveOtp(this, 4)">
+                    </div>
+                    <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 15px;">
+                        <i class="fa-solid fa-location-dot"></i> We'll verify your location matches
+                    </p>
+                    <button class="btn-verify" onclick="verifyAndStartJob()">
+                        <i class="fa-solid fa-play"></i> Start Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Popup -->
+    <div class="feedback-popup" id="feedbackPopup">
+        <div class="feedback-icon"><i class="fa-solid fa-check"></i></div>
+        <div class="feedback-title">Job Completed!</div>
+        <div class="feedback-text">Taking feedback from customer...</div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item active" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-ratings.html'">
+            <i class="fa-solid fa-star"></i>Reviews
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-payout.html'">
+            <i class="fa-solid fa-wallet"></i>Payout
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let currentFilter = 'all';
+        let selectedJobId = null;
+        let partnerId = null;
+        let currentPartner = null;
+        let checklistItems = {};
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                partnerId = user.uid;
+                loadPartnerData(user.uid);
+                loadJobs(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function loadPartnerData(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                currentPartner = snapshot.val();
+            });
+        }
+
+        function loadJobs(uid) {
+            db.ref('partnerJobs/' + uid).on('value', (snapshot) => {
+                const jobs = snapshot.val() || {};
+                renderJobs(jobs);
+            });
+        }
+
+        function renderJobs(jobs) {
+            const list = document.getElementById('jobsList');
+            let filteredJobs = Object.entries(jobs);
+            
+            if (currentFilter !== 'all') {
+                filteredJobs = filteredJobs.filter(([id, job]) => job.status === currentFilter);
+            }
+
+            if (filteredJobs.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fa-solid fa-clipboard-check" style="color: #CBD5E1;"></i></div>
+                        <h3 style="color: #64748B; margin-bottom: 8px;">No jobs found</h3>
+                        <p style="font-size: 0.85rem;">Accept leads to see them here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filteredJobs.map(([id, job]) => {
+                const isPaintingOrWaterproofing = ['painting', 'waterproofing'].includes(job.category);
+                const showQuoteSection = job.status === 'scheduled' && isPaintingOrWaterproofing;
+                const showAddons = job.status === 'scheduled' && !isPaintingOrWaterproofing;
+                const showPayment = job.status === 'ongoing';
+                const showChecklist = job.status === 'ongoing';
+                const showStartBtn = job.status === 'scheduled';
+
+                return `
+                    <div class="job-card" data-job-id="${id}">
+                        <div class="job-header">
+                            <div>
+                                <span class="job-status status-${job.status}">
+                                    <i class="fa-solid fa-circle" style="font-size: 6px;"></i>
+                                    ${job.status === 'scheduled' ? 'Scheduled' : job.status === 'ongoing' ? 'In Progress' : 'Completed'}
+                                </span>
+                                <div class="job-id" style="margin-top: 5px;">#${id.slice(-6).toUpperCase()}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="job-title">${job.service || 'Home Service'}</div>
+                        
+                        <div class="job-details">
+                            <div class="detail-item"><i class="fa-solid fa-calendar" style="color: var(--p);"></i> ${job.preferredDate || 'Flexible'}</div>
+                            <div class="detail-item"><i class="fa-solid fa-clock" style="color: var(--p);"></i> ${job.preferredTime || 'Anytime'}</div>
+                            <div class="detail-item"><i class="fa-solid fa-money-bill" style="color: var(--p);"></i> ₹${(job.budget || 0).toLocaleString()}</div>
+                        </div>
+
+                        <div class="customer-bar">
+                            <div class="customer-avatar"><i class="fa-solid fa-user"></i></div>
+                            <div class="customer-info">
+                                <div class="customer-name">${job.customerName || 'Customer'}</div>
+                                <div class="customer-phone">${job.customerPhone || 'N/A'}</div>
+                            </div>
+                            <div class="action-btns">
+                                <button class="icon-btn call" onclick="callCustomer('${job.customerPhone}')">
+                                    <i class="fa-solid fa-phone"></i>
+                                </button>
+                                <button class="icon-btn direction" onclick="getDirections('${job.address}')">
+                                    <i class="fa-solid fa-location-arrow"></i>
+                                </button>
+                                <button class="icon-btn help" onclick="helpCustomer('${id}')">
+                                    <i class="fa-solid fa-headset"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        ${showStartBtn ? `
+                        <button class="btn-start" onclick="showStartModal('${id}', '${job.customerPhone}')">
+                            <i class="fa-solid fa-play"></i> Start Your Job
+                        </button>
+                        ` : ''}
+
+                        ${showQuoteSection ? renderQuoteCalculator(id, job) : ''}
+                        ${showAddons ? renderAddonsSection(id, job) : ''}
+                        ${showPayment ? renderPaymentSection(id, job) : ''}
+                        ${showChecklist ? renderChecklist(id, job) : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuoteCalculator(jobId, job) {
+            return `
+                <div class="quote-section" id="quote-${jobId}" style="display: block;">
+                    <div class="quote-title"><i class="fa-solid fa-calculator" style="color: var(--p);"></i> Share Quote</div>
+                    <div class="calc-row">
+                        <select class="calc-select" id="paintType-${jobId}">
+                            <option value="">Select Paint Type</option>
+                            <option value="economy">Economy (₹15/sqft)</option>
+                            <option value="premium">Premium (₹25/sqft)</option>
+                            <option value="luxury">Luxury (₹40/sqft)</option>
+                        </select>
+                        <select class="calc-select" id="wallCondition-${jobId}">
+                            <option value="">Wall Condition</option>
+                            <option value="good">Good (No repair)</option>
+                            <option value="average">Average (+₹5/sqft)</option>
+                            <option value="poor">Poor (+₹10/sqft)</option>
+                        </select>
+                    </div>
+                    <div class="calc-row">
+                        <input type="number" class="calc-input" id="area-${jobId}" placeholder="Area (sq ft)">
+                        <select class="calc-select" id="coats-${jobId}">
+                            <option value="2">2 Coats</option>
+                            <option value="3">3 Coats (+20%)</option>
+                        </select>
+                    </div>
+                    <div class="calc-result">
+                        <div style="font-size: 0.85rem; color: #64748B;">Estimated Quote</div>
+                        <div class="calc-amount" id="quoteAmount-${jobId}">₹0</div>
+                    </div>
+                    <button class="btn-share-quote" onclick="shareQuote('${jobId}')">
+                        <i class="fa-solid fa-share"></i> Share Quote with Customer
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderAddonsSection(jobId, job) {
+            return `
+                <div class="addons-section" id="addons-${jobId}" style="display: block;">
+                    <div class="addons-title">Add Extra Services</div>
+                    <div class="addon-item">
+                        <span class="addon-name">Extra Fitting/Part</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="addon-price">+₹500</span>
+                            <button class="btn-add-addon" onclick="addAddon('${jobId}', 'fitting', 500)">Add</button>
+                        </div>
+                    </div>
+                    <div class="addon-item">
+                        <span class="addon-name">Emergency Service</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="addon-price">+₹300</span>
+                            <button class="btn-add-addon" onclick="addAddon('${jobId}', 'emergency', 300)">Add</button>
+                        </div>
+                    </div>
+                    <div class="addon-item">
+                        <span class="addon-name">After Hours</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="addon-price">+₹400</span>
+                            <button class="btn-add-addon" onclick="addAddon('${jobId}', 'afterhours', 400)">Add</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPaymentSection(jobId, job) {
+            const paymentType = job.paymentType || 'cash';
+            return `
+                <div class="payment-section">
+                    <div class="payment-title"><i class="fa-solid fa-money-bill-wave" style="color: var(--p);"></i> Payment</div>
+                    <div class="payment-methods">
+                        <button class="payment-btn ${paymentType === 'cash' ? 'active' : ''}" onclick="collectPayment('${jobId}', 'cash')">
+                            <i class="fa-solid fa-money-bill" style="color: #16A34A;"></i>
+                            <span>Cash</span>
+                        </button>
+                        <button class="payment-btn ${paymentType === 'online' ? 'active' : ''}" onclick="collectPayment('${jobId}', 'online')">
+                            <i class="fa-solid fa-mobile-screen" style="color: #2563EB;"></i>
+                            <span>Online</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChecklist(jobId, job) {
+            const items = [
+                'Work completed as per requirement',
+                'Customer satisfied with quality',
+                'Area cleaned after work',
+                'Payment received from customer'
+            ];
+            
+            checklistItems[jobId] = checklistItems[jobId] || {};
+            
+            return `
+                <div class="checklist-section">
+                    <div class="checklist-title"><i class="fa-solid fa-clipboard-check" style="color: var(--p);"></i> Completion Checklist</div>
+                    ${items.map((item, idx) => `
+                        <div class="checklist-item" onclick="toggleChecklist('${jobId}', ${idx})">
+                            <div class="checklist-checkbox ${checklistItems[jobId][idx] ? 'checked' : ''}" id="check-${jobId}-${idx}">
+                                ${checklistItems[jobId][idx] ? '<i class="fa-solid fa-check"></i>' : ''}
+                            </div>
+                            <span class="checklist-text">${item}</span>
+                        </div>
+                    `).join('')}
+                    <button class="btn-complete ${isChecklistComplete(jobId) ? 'active' : ''}" id="completeBtn-${jobId}" 
+                        onclick="completeJob('${jobId}')" ${!isChecklistComplete(jobId) ? 'disabled' : ''}>
+                        <i class="fa-solid fa-check-circle"></i> Mark Job Complete
+                    </button>
+                </div>
+            `;
+        }
+
+        function isChecklistComplete(jobId) {
+            const items = checklistItems[jobId] || {};
+            return Object.values(items).filter(v => v).length === 4;
+        }
+
+        function toggleChecklist(jobId, idx) {
+            checklistItems[jobId] = checklistItems[jobId] || {};
+            checklistItems[jobId][idx] = !checklistItems[jobId][idx];
+            
+            const checkbox = document.getElementById(`check-${jobId}-${idx}`);
+            checkbox.classList.toggle('checked');
+            checkbox.innerHTML = checklistItems[jobId][idx] ? '<i class="fa-solid fa-check"></i>' : '';
+            
+            const btn = document.getElementById(`completeBtn-${jobId}`);
+            if (isChecklistComplete(jobId)) {
+                btn.classList.add('active');
+                btn.disabled = false;
+            } else {
+                btn.classList.remove('active');
+                btn.disabled = true;
+            }
+        }
+
+        function filterJobs(status, btn) {
+            document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = status;
+            loadJobs(partnerId);
+        }
+
+        function showStartModal(jobId, customerPhone) {
+            selectedJobId = jobId;
+            document.getElementById('startJobModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('startJobModal').classList.remove('active');
+        }
+
+        function moveOtp(input, index) {
+            if (input.value.length === 1 && index < 4) {
+                document.querySelectorAll('.otp-input')[index].focus();
+            }
+        }
+
+        function verifyAndStartJob() {
+            const inputs = document.querySelectorAll('.otp-input');
+            const otp = Array.from(inputs).map(i => i.value).join('');
+            
+            if (otp.length !== 4) {
+                showToast('Please enter complete OTP', 'error');
+                return;
+            }
+
+            // Get partner location
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Verify location and start job
+                        db.ref('partnerJobs/' + partnerId + '/' + selectedJobId).update({
+                            status: 'ongoing',
+                            startedAt: firebase.database.ServerValue.TIMESTAMP,
+                            partnerLocation: {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            }
+                        }).then(() => {
+                            showToast('Job started!', 'success');
+                            closeModal();
+                            loadJobs(partnerId);
+                        });
+                    },
+                    (err) => {
+                        showToast('Location access required', 'error');
+                    }
+                );
+            }
+        }
+
+        function calculateQuote(jobId) {
+            const paintType = document.getElementById(`paintType-${jobId}`).value;
+            const condition = document.getElementById(`wallCondition-${jobId}`).value;
+            const area = parseFloat(document.getElementById(`area-${jobId}`).value) || 0;
+            const coats = parseInt(document.getElementById(`coats-${jobId}`).value) || 2;
+            
+            const rates = { economy: 15, premium: 25, luxury: 40 };
+            const conditionRates = { good: 0, average: 5, poor: 10 };
+            
+            let baseRate = rates[paintType] || 0;
+            let conditionRate = conditionRates[condition] || 0;
+            let totalRate = baseRate + conditionRate;
+            let amount = totalRate * area;
+            
+            if (coats === 3) amount *= 1.2;
+            
+            document.getElementById(`quoteAmount-${jobId}`).textContent = '₹' + Math.round(amount).toLocaleString();
+            return Math.round(amount);
+        }
+
+        // Auto-calculate on input change
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('calc-select') || e.target.classList.contains('calc-input')) {
+                const jobId = e.target.id.split('-')[1];
+                calculateQuote(jobId);
+            }
+        });
+
+        function shareQuote(jobId) {
+            const amount = calculateQuote(jobId);
+            if (amount === 0) {
+                showToast('Please fill all fields', 'error');
+                return;
+            }
+            
+            db.ref('partnerJobs/' + partnerId + '/' + jobId).update({
+                quotedAmount: amount,
+                quoteSharedAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                showToast('Quote shared with customer!', 'success');
+            });
+        }
+
+        function addAddon(jobId, type, amount) {
+            db.ref('partnerJobs/' + partnerId + '/' + jobId + '/addons').push({
+                type: type,
+                amount: amount,
+                addedAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                showToast('Addon added! Customer will be notified.', 'success');
+            });
+        }
+
+        function collectPayment(jobId, type) {
+            if (type === 'cash') {
+                db.ref('partnerJobs/' + partnerId + '/' + jobId).update({
+                    paymentStatus: 'collected',
+                    paymentType: 'cash',
+                    paymentCollectedAt: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    showToast('Payment marked as collected!', 'success');
+                });
+            } else {
+                showToast('Online payment - waiting for confirmation', 'info');
+            }
+        }
+
+        function completeJob(jobId) {
+            // Show feedback popup
+            const popup = document.getElementById('feedbackPopup');
+            popup.classList.add('show');
+            
+            setTimeout(() => {
+                popup.classList.remove('show');
+                
+                db.ref('partnerJobs/' + partnerId + '/' + jobId).update({
+                    status: 'completed',
+                    completedAt: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    // Update partner stats
+                    db.ref('partners/' + partnerId).once('value').then((snap) => {
+                        const partner = snap.val() || {};
+                        db.ref('partners/' + partnerId).update({
+                            totalJobs: (partner.totalJobs || 0) + 1,
+                            hasActiveVisit: false
+                        });
+                    });
+                    
+                    showToast('Job completed successfully!', 'success');
+                    loadJobs(partnerId);
+                });
+            }, 2500);
+        }
+
+        function callCustomer(phone) {
+            if (phone) window.location.href = 'tel:' + phone;
+        }
+
+        function getDirections(address) {
+            if (address) {
+                window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address), '_blank');
+            }
+        }
+
+        function helpCustomer(jobId) {
+            window.location.href = 'https://wa.me/919711904092?text=Need help with job: ' + jobId;
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <div style="font-weight: 700; color: #1E293B; font-size: 0.95rem;">Success!</div>
+                    <div style="color: #64748B; font-size: 0.85rem;">${message}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+        }
+    </script>
+</body>
+</html>

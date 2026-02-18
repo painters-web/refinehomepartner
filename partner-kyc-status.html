@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>KYC Status | Refine Home Painting</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* Processing Animation */
+        .processing-container {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 30px 20px; text-align: center;
+        }
+
+        .processing-ring {
+            width: 150px; height: 150px;
+            position: relative; margin-bottom: 40px;
+        }
+        .ring {
+            position: absolute; border-radius: 50%;
+            border: 4px solid transparent;
+            animation: rotate 2s linear infinite;
+        }
+        .ring-1 {
+            width: 100%; height: 100%;
+            border-top-color: var(--p);
+            animation-duration: 2s;
+        }
+        .ring-2 {
+            width: 80%; height: 80%; top: 10%; left: 10%;
+            border-right-color: var(--p-light);
+            animation-duration: 1.5s; animation-direction: reverse;
+        }
+        .ring-3 {
+            width: 60%; height: 60%; top: 20%; left: 20%;
+            border-bottom-color: #F59E0B;
+            animation-duration: 1s;
+        }
+        .center-icon {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .processing-title {
+            font-size: 1.8rem; font-weight: 800;
+            color: #1E293B; margin-bottom: 15px;
+        }
+        .processing-subtitle {
+            color: #64748B; font-size: 1rem;
+            max-width: 300px; line-height: 1.6;
+        }
+
+        /* Progress Steps */
+        .progress-tracker {
+            background: white; border-radius: 20px;
+            padding: 25px; margin: 30px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .tracker-title {
+            font-weight: 700; color: #1E293B;
+            margin-bottom: 20px; display: flex;
+            align-items: center; gap: 10px;
+        }
+        .tracker-step {
+            display: flex; align-items: flex-start; gap: 15px;
+            margin-bottom: 20px; position: relative;
+        }
+        .tracker-step:last-child { margin-bottom: 0; }
+        .tracker-step::before {
+            content: ''; position: absolute; left: 15px; top: 35px;
+            width: 2px; height: calc(100% - 15px); background: #E2E8F0;
+        }
+        .tracker-step:last-child::before { display: none; }
+        
+        .step-icon {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; flex-shrink: 0; z-index: 1;
+        }
+        .step-icon.completed { background: #22C55E; color: white; }
+        .step-icon.active { background: var(--p); color: white; animation: pulse 1.5s infinite; }
+        .step-icon.pending { background: #E2E8F0; color: #94A3B8; }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(13, 148, 136, 0); }
+        }
+
+        .step-content { flex: 1; }
+        .step-name { font-weight: 700; color: #1E293B; }
+        .step-desc { font-size: 0.85rem; color: #64748B; margin-top: 3px; }
+
+        /* Contact Support */
+        .support-card {
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            border-radius: 20px; padding: 20px;
+            margin: 0 20px 20px; color: white;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .support-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+        }
+        .support-content { flex: 1; }
+        .support-title { font-weight: 700; }
+        .support-desc { font-size: 0.85rem; opacity: 0.9; }
+        .support-btn {
+            padding: 10px 20px; background: white;
+            color: var(--p); border: none; border-radius: 10px;
+            font-weight: 700; cursor: pointer;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            margin: 0 20px 30px; padding: 16px;
+            background: #FEF2F2; color: #EF4444;
+            border: 2px solid #FECACA; border-radius: 14px;
+            font-weight: 700; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; gap: 10px;
+        }
+
+        /* Approved State */
+        .approved-container { display: none; }
+        .approved-icon {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 30px; font-size: 4rem; color: white;
+            animation: scaleIn 0.5s ease;
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        .approved-title { font-size: 2rem; font-weight: 800; color: #22C55E; }
+        .approved-subtitle { color: #64748B; margin: 10px 0 30px; }
+        .btn-primary {
+            width: calc(100% - 40px); margin: 0 20px 20px;
+            padding: 18px; background: var(--p); color: white;
+            border: none; border-radius: 14px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 10px;
+        }
+
+        /* Rejected State */
+        .rejected-container { display: none; }
+        .rejected-icon {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 30px; font-size: 4rem; color: white;
+        }
+        .rejected-title { font-size: 1.8rem; font-weight: 800; color: #EF4444; }
+        .rejected-reason {
+            background: #FEF2F2; border: 2px solid #FECACA;
+            border-radius: 16px; padding: 20px;
+            margin: 20px; text-align: left;
+        }
+        .rejected-reason-title { font-weight: 700; color: #DC2626; margin-bottom: 10px; }
+        .rejected-reason-text { color: #64748B; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Processing State -->
+    <div id="processingState" class="processing-container">
+        <div class="processing-ring">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="center-icon">
+                <i class="fa-solid fa-file-signature"></i>
+            </div>
+        </div>
+        
+        <div class="processing-title">KYC Under Review</div>
+        <div class="processing-subtitle">
+            We're verifying your documents. This usually takes 24-48 hours.
+        </div>
+
+        <div class="progress-tracker">
+            <div class="tracker-title">
+                <i class="fa-solid fa-list-check" style="color: var(--p);"></i>
+                Application Status
+            </div>
+            <div class="tracker-step">
+                <div class="step-icon completed"><i class="fa-solid fa-check"></i></div>
+                <div class="step-content">
+                    <div class="step-name">Documents Submitted</div>
+                    <div class="step-desc">Your KYC documents received</div>
+                </div>
+            </div>
+            <div class="tracker-step">
+                <div class="step-icon active"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="step-content">
+                    <div class="step-name">Under Verification</div>
+                    <div class="step-desc">Our team is reviewing your documents</div>
+                </div>
+            </div>
+            <div class="tracker-step">
+                <div class="step-icon pending"><i class="fa-solid fa-hourglass"></i></div>
+                <div class="step-content">
+                    <div class="step-name">Approval Pending</div>
+                    <div class="step-desc">You'll be notified once approved</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="support-card">
+            <div class="support-icon"><i class="fa-solid fa-headset"></i></div>
+            <div class="support-content">
+                <div class="support-title">Need Help?</div>
+                <div class="support-desc">Contact our support team</div>
+            </div>
+            <button class="support-btn" onclick="contactSupport()">Call</button>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+        </button>
+    </div>
+
+    <!-- Approved State -->
+    <div id="approvedState" class="processing-container approved-container">
+        <div class="approved-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="approved-title">KYC Approved!</div>
+        <div class="approved-subtitle">
+            Congratulations! Your partner account is now active.
+        </div>
+        <button class="btn-primary" onclick="goToHome()">
+            <i class="fa-solid fa-rocket"></i> Go to Dashboard
+        </button>
+    </div>
+
+    <!-- Rejected State -->
+    <div id="rejectedState" class="processing-container rejected-container">
+        <div class="rejected-icon">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+        <div class="rejected-title">KYC Rejected</div>
+        <div class="processing-subtitle">
+            Unfortunately, we couldn't verify your documents.
+        </div>
+        <div class="rejected-reason">
+            <div class="rejected-reason-title"><i class="fa-solid fa-circle-exclamation"></i> Reason</div>
+            <div class="rejected-reason-text" id="rejectionReason">
+                Documents uploaded were unclear or invalid. Please re-submit clear photos of your original Aadhaar and PAN card.
+            </div>
+        </div>
+        <button class="btn-primary" onclick="reSubmitKYC()">
+            <i class="fa-solid fa-rotate-right"></i> Re-submit KYC
+        </button>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+        </button>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Check KYC Status
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                checkKycStatus(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function checkKycStatus(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                const partner = snapshot.val();
+                if (!partner) return;
+
+                if (partner.kycStatus === 'approved') {
+                    showApprovedState();
+                } else if (partner.kycStatus === 'rejected') {
+                    showRejectedState(partner.rejectionReason);
+                }
+                // else keep showing processing state
+            });
+        }
+
+        function showApprovedState() {
+            document.getElementById('processingState').style.display = 'none';
+            document.getElementById('rejectedState').style.display = 'none';
+            document.getElementById('approvedState').style.display = 'flex';
+            
+            // Play notification sound
+            playNotificationSound();
+        }
+
+        function showRejectedState(reason) {
+            document.getElementById('processingState').style.display = 'none';
+            document.getElementById('approvedState').style.display = 'none';
+            document.getElementById('rejectedState').style.display = 'flex';
+            if (reason) {
+                document.getElementById('rejectionReason').textContent = reason;
+            }
+        }
+
+        function playNotificationSound() {
+            // Create a simple beep sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function goToHome() {
+            window.location.href = 'partner-home.html';
+        }
+
+        function reSubmitKYC() {
+            window.location.href = 'partner-signup.html?resubmit=true';
+        }
+
+        function contactSupport() {
+            window.location.href = 'https://wa.me/919711904092';
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>

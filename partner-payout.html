@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <title>Payout | Partner Portal</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #0D9488; --p-light: #14B8A6; --bg: #F0FDFA; --text: #134E4A; --white: #FFFFFF; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex; align-items: center;
+            padding: 0 20px; z-index: 100;
+            border-bottom: 1px solid #CCFBF1;
+        }
+        .back-btn { 
+            width: 42px; height: 42px; border-radius: 12px;
+            background: #F0FDFA; border: none; color: var(--p);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-right: 15px;
+        }
+        .header-title { font-weight: 800; font-size: 1.3rem; flex: 1; }
+
+        .content { margin-top: 90px; padding: 0 20px; }
+
+        /* Balance Card */
+        .balance-card {
+            background: linear-gradient(135deg, var(--p), var(--p-light));
+            border-radius: 24px; padding: 30px;
+            color: white; margin-bottom: 25px;
+            box-shadow: 0 15px 40px rgba(13, 148, 136, 0.3);
+        }
+        .balance-label { font-size: 0.9rem; opacity: 0.9; }
+        .balance-amount { font-size: 3rem; font-weight: 800; margin: 10px 0; }
+        .balance-actions {
+            display: flex; gap: 12px; margin-top: 20px;
+        }
+        .balance-btn {
+            flex: 1; padding: 14px;
+            background: rgba(255,255,255,0.2); color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .balance-btn:hover { background: rgba(255,255,255,0.3); }
+        .balance-btn.withdraw { background: white; color: var(--p); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: white; padding: 20px; border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stat-icon {
+            width: 45px; height: 45px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; margin-bottom: 12px;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: #1E293B; }
+        .stat-label { font-size: 0.8rem; color: #64748B; margin-top: 4px; }
+
+        /* Bank Account Card */
+        .bank-card {
+            background: white; border-radius: 20px;
+            padding: 20px; margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .bank-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .bank-title { font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 10px; }
+        .edit-btn {
+            padding: 8px 16px; background: #F0FDFA;
+            color: var(--p); border: none; border-radius: 10px;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+        }
+        .bank-details {
+            background: #F8FAFC; border-radius: 12px;
+            padding: 15px;
+        }
+        .bank-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px solid #E2E8F0;
+        }
+        .bank-row:last-child { border-bottom: none; }
+        .bank-label { color: #64748B; font-size: 0.9rem; }
+        .bank-value { font-weight: 600; color: #1E293B; }
+
+        /* Transactions */
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: #1E293B; }
+        .view-all { color: var(--p); font-size: 0.85rem; font-weight: 600; }
+
+        .transaction-card {
+            background: white; border-radius: 16px;
+            padding: 15px 20px; margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 15px;
+        }
+        .tx-icon {
+            width: 45px; height: 45px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .tx-icon.credit { background: #DCFCE7; color: #16A34A; }
+        .tx-icon.debit { background: #FEE2E2; color: #DC2626; }
+        .tx-content { flex: 1; }
+        .tx-title { font-weight: 600; color: #1E293B; }
+        .tx-date { font-size: 0.8rem; color: #94A3B8; }
+        .tx-amount { font-weight: 700; font-size: 1.1rem; }
+        .tx-amount.credit { color: #16A34A; }
+        .tx-amount.debit { color: #DC2626; }
+        .tx-status {
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .tx-status.completed { background: #DCFCE7; color: #16A34A; }
+        .tx-status.pending { background: #FEF3C7; color: #D97706; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 40px 20px;
+            color: #94A3B8;
+        }
+
+        /* Bottom Nav */
+        .nav { 
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #CCFBF1;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; padding-bottom: 10px;
+        }
+        .nav-item { 
+            text-align: center; color: #94A3B8; 
+            font-size: 0.7rem; font-weight: 700;
+            width: 70px; cursor: pointer; padding: 10px;
+            border-radius: 16px; transition: all 0.2s;
+        }
+        .nav-item.active { 
+            color: var(--p); background: #F0FDFA;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
+        }
+        .nav-item i { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            padding: 20px; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: white; width: 100%; max-width: 360px;
+            border-radius: 24px; padding: 25px;
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .modal-title { font-size: 1.3rem; font-weight: 800; color: #1E293B; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        .input-label { display: block; font-weight: 600; color: #1E293B; margin-bottom: 8px; font-size: 0.9rem; }
+        .input-field {
+            width: 100%; padding: 14px;
+            border: 2px solid #E2E8F0; border-radius: 12px;
+            outline: none; font-size: 1rem;
+        }
+        .input-field:focus { border-color: var(--p); }
+        .btn-primary {
+            width: 100%; padding: 14px;
+            background: var(--p); color: white;
+            border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="header-title">Payout</div>
+    </div>
+
+    <div class="content">
+        <!-- Balance Card -->
+        <div class="balance-card">
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amount" id="availableBalance">₹0</div>
+            <div class="balance-actions">
+                <button class="balance-btn" onclick="viewEarnings()">
+                    <i class="fa-solid fa-chart-line"></i> Earnings
+                </button>
+                <button class="balance-btn withdraw" onclick="withdraw()">
+                    <i class="fa-solid fa-money-bill-transfer"></i> Withdraw
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div class="stat-value" id="totalEarnings">₹0</div>
+                <div class="stat-label">Total Earnings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #DBEAFE; color: #2563EB;">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="stat-value" id="pendingAmount">₹0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #DCFCE7; color: #16A34A;">
+                    <i class="fa-solid fa-check-circle"></i>
+                </div>
+                <div class="stat-value" id="withdrawnAmount">₹0</div>
+                <div class="stat-label">Withdrawn</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #F0FDFA; color: var(--p);">
+                    <i class="fa-solid fa-briefcase"></i>
+                </div>
+                <div class="stat-value" id="totalJobs">0</div>
+                <div class="stat-label">Jobs Done</div>
+            </div>
+        </div>
+
+        <!-- Bank Account -->
+        <div class="bank-card">
+            <div class="bank-header">
+                <div class="bank-title">
+                    <i class="fa-solid fa-building-columns" style="color: var(--p);"></i>
+                    Bank Account
+                </div>
+                <button class="edit-btn" onclick="editBankDetails()">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+            </div>
+            <div class="bank-details" id="bankDetails">
+                <div class="bank-row">
+                    <span class="bank-label">Account Holder</span>
+                    <span class="bank-value" id="accountName">Not Added</span>
+                </div>
+                <div class="bank-row">
+                    <span class="bank-label">Bank Name</span>
+                    <span class="bank-value" id="bankName">-</span>
+                </div>
+                <div class="bank-row">
+                    <span class="bank-label">Account Number</span>
+                    <span class="bank-value" id="accountNumber">-</span>
+                </div>
+                <div class="bank-row">
+                    <span class="bank-label">IFSC Code</span>
+                    <span class="bank-value" id="ifscCode">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section-header">
+            <div class="section-title">Recent Transactions</div>
+            <a href="#" class="view-all" onclick="viewAllTransactions()">View All</a>
+        </div>
+
+        <div id="transactionsList">
+            <div class="empty-state">
+                <p>No transactions yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Bank Modal -->
+    <div class="modal-overlay" id="bankModal">
+        <div class="modal-content">
+            <div class="modal-title">Update Bank Details</div>
+            <div class="input-group">
+                <label class="input-label">Account Holder Name</label>
+                <input type="text" id="editAccountName" class="input-field" placeholder="Full Name">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Bank Name</label>
+                <input type="text" id="editBankName" class="input-field" placeholder="e.g., SBI, HDFC">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Account Number</label>
+                <input type="text" id="editAccountNumber" class="input-field" placeholder="Account Number">
+            </div>
+            <div class="input-group">
+                <label class="input-label">IFSC Code</label>
+                <input type="text" id="editIfscCode" class="input-field" placeholder="SBIN0001234">
+            </div>
+            <button class="btn-primary" onclick="saveBankDetails()">Save Details</button>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="nav">
+        <div class="nav-item" onclick="window.location.href='partner-home.html'">
+            <i class="fa-solid fa-house"></i>Home
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-jobs.html'">
+            <i class="fa-solid fa-briefcase"></i>Jobs
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-ratings.html'">
+            <i class="fa-solid fa-star"></i>Reviews
+        </div>
+        <div class="nav-item active" onclick="window.location.href='partner-payout.html'">
+            <i class="fa-solid fa-wallet"></i>Payout
+        </div>
+        <div class="nav-item" onclick="window.location.href='partner-profile.html'">
+            <i class="fa-solid fa-user"></i>Profile
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmqBL6a0muExq2qBsSR6M3C_8AyXcJ2k8",
+            authDomain: "urban-paint-pro.firebaseapp.com",
+            databaseURL: "https://urban-paint-pro-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "urban-paint-pro",
+            storageBucket: "urban-paint-pro.firebasestorage.app",
+            messagingSenderId: "929763117480",
+            appId: "1:929763117480:web:560057baeb12672078b59d"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let partnerId = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                partnerId = user.uid;
+                loadPayoutData(user.uid);
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function loadPayoutData(uid) {
+            db.ref('partners/' + uid).on('value', (snapshot) => {
+                const partner = snapshot.val() || {};
+                
+                document.getElementById('availableBalance').textContent = '₹' + (partner.availableBalance || 0).toLocaleString();
+                document.getElementById('totalEarnings').textContent = '₹' + (partner.earnings || 0).toLocaleString();
+                document.getElementById('pendingAmount').textContent = '₹' + (partner.pendingPayment || 0).toLocaleString();
+                document.getElementById('withdrawnAmount').textContent = '₹' + (partner.withdrawn || 0).toLocaleString();
+                document.getElementById('totalJobs').textContent = partner.totalJobs || 0;
+                
+                // Bank details
+                if (partner.bankDetails) {
+                    document.getElementById('accountName').textContent = partner.bankDetails.accountName || 'Not Added';
+                    document.getElementById('bankName').textContent = partner.bankDetails.bankName || '-';
+                    document.getElementById('accountNumber').textContent = partner.bankDetails.accountNumber ? 
+                        'XXXX' + partner.bankDetails.accountNumber.slice(-4) : '-';
+                    document.getElementById('ifscCode').textContent = partner.bankDetails.ifscCode || '-';
+                }
+            });
+            
+            loadTransactions(uid);
+        }
+
+        function loadTransactions(uid) {
+            db.ref('partnerTransactions/' + uid).orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+                const transactions = snapshot.val() || {};
+                const list = document.getElementById('transactionsList');
+                
+                if (Object.keys(transactions).length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>No transactions yet</p></div>';
+                    return;
+                }
+                
+                list.innerHTML = Object.entries(transactions).reverse().map(([id, tx]) => {
+                    const date = tx.timestamp ? new Date(tx.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '-';
+                    const isCredit = tx.type === 'credit';
+                    
+                    return `
+                        <div class="transaction-card">
+                            <div class="tx-icon ${isCredit ? 'credit' : 'debit'}">
+                                <i class="fa-solid ${isCredit ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                            </div>
+                            <div class="tx-content">
+                                <div class="tx-title">${tx.description || 'Transaction'}</div>
+                                <div class="tx-date">${date}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="tx-amount ${isCredit ? 'credit' : 'debit'}">
+                                    ${isCredit ? '+' : '-'}₹${(tx.amount || 0).toLocaleString()}
+                                </div>
+                                <span class="tx-status ${tx.status || 'completed'}">${tx.status || 'Completed'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        function viewEarnings() {
+            alert('Detailed earnings view coming soon!');
+        }
+
+        function withdraw() {
+            alert('Withdrawal request submitted!');
+        }
+
+        function editBankDetails() {
+            document.getElementById('bankModal').classList.add('active');
+        }
+
+        function saveBankDetails() {
+            const bankDetails = {
+                accountName: document.getElementById('editAccountName').value,
+                bankName: document.getElementById('editBankName').value,
+                accountNumber: document.getElementById('editAccountNumber').value,
+                ifscCode: document.getElementById('editIfscCode').value,
+                updatedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            db.ref('partners/' + partnerId + '/bankDetails').set(bankDetails).then(() => {
+                document.getElementById('bankModal').classList.remove('active');
+                alert('Bank details updated!');
+            });
+        }
+
+        function viewAllTransactions() {
+            alert('Full transaction history coming soon!');
+        }
+
+        document.querySelector('.modal-overlay').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
