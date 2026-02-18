@@ -364,12 +364,23 @@
         let currentFilter = 'all';
         let selectedLead = null;
         let selectedLeadId = null;
-        let partnerId = null;
+                // Global variable sabse upar (line 360 ke paas) define karein
+        let currentPartner = {}; 
 
+        // Auth listener ko update karein
         auth.onAuthStateChanged((user) => {
             if (user) {
                 partnerId = user.uid;
-                loadLeads();
+                
+                // Yahan hum Partner ka Naam aur Phone database se mangwa rahe hain
+                db.ref('partners/' + user.uid).once('value').then(snap => {
+                    currentPartner = snap.val() || {};
+                    
+                    // Agar naam nahi mila to default naam dein
+                    if(!currentPartner.name) currentPartner.name = "Verified Partner";
+                    
+                    loadLeads(); // Data aane ke baad hi leads load karein
+                });
             } else {
                 window.location.href = 'partner-login.html';
             }
@@ -548,77 +559,69 @@
         function closeModal() {
             document.getElementById('leadModal').classList.remove('active');
         }
-        async function acceptLead() {
+                async function acceptLead() {
+            // 1. Check karein ki lead select hai ya nahi
             if (!selectedLead || !selectedLeadId) return;
-            
-            // 1. OTP Generate karein (Agar pehle se nahi hai)
-            const otp = selectedLead.startOtp || Math.floor(1000 + Math.random() * 9000);
-            
-            // 2. Multi-path updates object banayein
-            const updates = {};
-            const timestamp = firebase.database.ServerValue.TIMESTAMP;
-            
-            // A. Partner ke liye Job Data tayyar karein
-            const jobData = {
-                ...selectedLead,
-                jobId: selectedLeadId,
-                status: 'scheduled', // Partner ke liye status 'scheduled' rahega
-                partnerId: partnerId,
-                acceptedAt: timestamp,
-                startOtp: otp
-            };
-            
-            // B. Customer ko update karne ke liye data
-            // Yeh sabse ZAROORI hissa hai taaki customer app me screen change ho
-            const customerUpdate = {
-                status: 'assigned', // Status change to trigger OTP screen
-                partnerId: partnerId,
-                partnerName: currentPartner.name || 'Professional Partner',
-                partnerPhone: currentPartner.phone || 'N/A',
-                startOtp: otp, // OTP customer ke order me save karein
-                updatedAt: timestamp
-            };
 
-            // --- Database Paths set karein ---
-
-            // 1. Partner ke bucket me job daalein
-            updates[`partnerJobs/${partnerId}/${selectedLeadId}`] = jobData;
-
-            // 2. Customer ke order ko update karein (Taaki "Finding..." hate aur OTP dikhe)
-            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerId`] = partnerId;
-            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerName`] = currentPartner.name || 'Verified Partner';
-            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerPhone`] = currentPartner.phone || '';
-            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/startOtp`] = otp;
-
-            // 3. Master Order Node ko bhi update karein (Admin ke liye)
-            updates[`orders/${selectedLeadId}/status`] = 'assigned';
-            updates[`orders/${selectedLeadId}/partnerId`] = partnerId;
-
-            // 4. Leads node se lead delete karein (Taaki dusre partners ko na dikhe)
-            updates[`leads/${selectedLeadId}`] = null;
+            // Button ko disable karein taaki do baar click na ho
+            const btn = document.getElementById('acceptBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
 
             try {
-                // Ek saath saare updates karein (Atomic Update)
+                // 2. OTP Generate karein
+                const otp = selectedLead.startOtp || Math.floor(1000 + Math.random() * 9000);
+                const timestamp = firebase.database.ServerValue.TIMESTAMP;
+                
+                // 3. Update karne ke liye data taiyar karein
+                const updates = {};
+
+                // A. Partner ke "My Jobs" section ke liye data
+                const jobData = {
+                    ...selectedLead,
+                    jobId: selectedLeadId,
+                    status: 'scheduled',
+                    partnerId: partnerId,
+                    acceptedAt: timestamp,
+                    startOtp: otp
+                };
+                updates[`partnerJobs/${partnerId}/${selectedLeadId}`] = jobData;
+
+                // B. CUSTOMER APP UPDATE (Sabse Important)
+                // Ye line customer app ka status "Finding..." se hatayegi
+                const customerPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
+                updates[`${customerPath}/status`] = 'assigned';
+                updates[`${customerPath}/partnerId`] = partnerId;
+                updates[`${customerPath}/partnerName`] = currentPartner.name; // Upar load kiya hua naam
+                updates[`${customerPath}/partnerPhone`] = currentPartner.phone || '';
+                updates[`${customerPath}/startOtp`] = otp;
+
+                // C. Admin Panel aur Main Orders update
+                updates[`orders/${selectedLeadId}/status`] = 'assigned';
+                updates[`orders/${selectedLeadId}/partnerId`] = partnerId;
+
+                // D. Leads list se hatana (Delete from leads)
+                updates[`leads/${selectedLeadId}`] = null;
+
+                // 4. Database me ek saath update karein
                 await db.ref().update(updates);
                 
-                showToast('Lead accepted successfully!', 'success');
+                showToast('Lead Accepted Successfully!', 'success');
                 closeModal();
                 
-                // Screen refresh karein
-                loadLeads();
-                
-                // Optional: Redirect to Jobs page
+                // Jobs page par bhejein
                 setTimeout(() => {
                     window.location.href = 'partner-jobs.html';
-                }, 1500);
+                }, 1000);
 
             } catch (error) {
-                console.error("Error accepting lead:", error);
-                showToast('Error accepting lead: ' + error.message, 'error');
+                console.error(error);
+                showToast('Error: ' + error.message, 'error');
+                btn.innerHTML = 'Accept Lead';
+                btn.disabled = false;
             }
-        }
-
+                }
+        
 
         function rejectLead(leadId) {
             if (!confirm('Are you sure you want to reject this lead?')) return;
