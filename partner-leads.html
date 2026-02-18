@@ -548,35 +548,77 @@
         function closeModal() {
             document.getElementById('leadModal').classList.remove('active');
         }
-
-        function acceptLead() {
+        async function acceptLead() {
             if (!selectedLead || !selectedLeadId) return;
             
-            const updates = {
-                status: 'accepted',
-                partnerId: partnerId,
-                acceptedAt: firebase.database.ServerValue.TIMESTAMP
-            };
+            // 1. OTP Generate karein (Agar pehle se nahi hai)
+            const otp = selectedLead.startOtp || Math.floor(1000 + Math.random() * 9000);
             
-            // Move to partner jobs
+            // 2. Multi-path updates object banayein
+            const updates = {};
+            const timestamp = firebase.database.ServerValue.TIMESTAMP;
+            
+            // A. Partner ke liye Job Data tayyar karein
             const jobData = {
                 ...selectedLead,
-                ...updates,
                 jobId: selectedLeadId,
-                startOtp: Math.floor(1000 + Math.random() * 9000)
+                status: 'scheduled', // Partner ke liye status 'scheduled' rahega
+                partnerId: partnerId,
+                acceptedAt: timestamp,
+                startOtp: otp
             };
             
-            db.ref('partnerJobs/' + partnerId + '/' + selectedLeadId).set(jobData)
-                .then(() => db.ref('leads/' + selectedLeadId).remove())
-                .then(() => {
-                    showToast('Lead accepted successfully!', 'success');
-                    closeModal();
-                    loadLeads();
-                })
-                .catch((error) => {
-                    showToast('Error accepting lead: ' + error.message, 'error');
-                });
+            // B. Customer ko update karne ke liye data
+            // Yeh sabse ZAROORI hissa hai taaki customer app me screen change ho
+            const customerUpdate = {
+                status: 'assigned', // Status change to trigger OTP screen
+                partnerId: partnerId,
+                partnerName: currentPartner.name || 'Professional Partner',
+                partnerPhone: currentPartner.phone || 'N/A',
+                startOtp: otp, // OTP customer ke order me save karein
+                updatedAt: timestamp
+            };
+
+            // --- Database Paths set karein ---
+
+            // 1. Partner ke bucket me job daalein
+            updates[`partnerJobs/${partnerId}/${selectedLeadId}`] = jobData;
+
+            // 2. Customer ke order ko update karein (Taaki "Finding..." hate aur OTP dikhe)
+            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/status`] = 'assigned';
+            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerId`] = partnerId;
+            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerName`] = currentPartner.name || 'Verified Partner';
+            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/partnerPhone`] = currentPartner.phone || '';
+            updates[`users/${selectedLead.userId}/orders/${selectedLeadId}/startOtp`] = otp;
+
+            // 3. Master Order Node ko bhi update karein (Admin ke liye)
+            updates[`orders/${selectedLeadId}/status`] = 'assigned';
+            updates[`orders/${selectedLeadId}/partnerId`] = partnerId;
+
+            // 4. Leads node se lead delete karein (Taaki dusre partners ko na dikhe)
+            updates[`leads/${selectedLeadId}`] = null;
+
+            try {
+                // Ek saath saare updates karein (Atomic Update)
+                await db.ref().update(updates);
+                
+                showToast('Lead accepted successfully!', 'success');
+                closeModal();
+                
+                // Screen refresh karein
+                loadLeads();
+                
+                // Optional: Redirect to Jobs page
+                setTimeout(() => {
+                    window.location.href = 'partner-jobs.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error("Error accepting lead:", error);
+                showToast('Error accepting lead: ' + error.message, 'error');
+            }
         }
+
 
         function rejectLead(leadId) {
             if (!confirm('Are you sure you want to reject this lead?')) return;
