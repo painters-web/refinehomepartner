@@ -559,69 +559,87 @@
         function closeModal() {
             document.getElementById('leadModal').classList.remove('active');
         }
-                async function acceptLead() {
-            // 1. Check karein ki lead select hai ya nahi
-            if (!selectedLead || !selectedLeadId) return;
+                        async function acceptLead() {
+            // 1. Basic Check
+            if (!selectedLead || !selectedLeadId) {
+                alert("Error: No lead selected!");
+                return;
+            }
 
-            // Button ko disable karein taaki do baar click na ho
+            // 2. CRITICAL CHECK: UserId hai ya nahi?
+            // Agar purani lead hai to usme userId nahi hoga, isliye naya order banakar test karein.
+            if (!selectedLead.userId) {
+                alert("Error: This lead is corrupted (Missing Customer ID). Please create a NEW Order to test.");
+                return;
+            }
+
+            // 3. Partner Data Check (Undefined error rokne ke liye)
+            const pName = (currentPartner && currentPartner.name) ? currentPartner.name : "Verified Partner";
+            const pPhone = (currentPartner && currentPartner.phone) ? currentPartner.phone : "";
+
+            // Button Disable
             const btn = document.getElementById('acceptBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-            btn.disabled = true;
+            if(btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+                btn.disabled = true;
+            }
 
             try {
-                // 2. OTP Generate karein
-                const otp = selectedLead.startOtp || Math.floor(1000 + Math.random() * 9000);
+                const otp = Math.floor(1000 + Math.random() * 9000);
                 const timestamp = firebase.database.ServerValue.TIMESTAMP;
                 
-                // 3. Update karne ke liye data taiyar karein
+                // Saare Updates Ek Saath
                 const updates = {};
+                
+                // Paths define karein
+                const customerOrderPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
+                const mainOrderPath = `orders/${selectedLeadId}`;
+                const partnerJobPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
+                const leadPath = `leads/${selectedLeadId}`;
 
-                // A. Partner ke "My Jobs" section ke liye data
-                const jobData = {
+                // A. Customer App Update (Finding -> Assigned)
+                updates[`${customerOrderPath}/status`] = 'assigned';
+                updates[`${customerOrderPath}/partnerId`] = partnerId;
+                updates[`${customerOrderPath}/partnerName`] = pName;
+                updates[`${customerOrderPath}/partnerPhone`] = pPhone;
+                updates[`${customerOrderPath}/startOtp`] = otp;
+
+                // B. Partner Job Create
+                updates[partnerJobPath] = {
                     ...selectedLead,
                     jobId: selectedLeadId,
                     status: 'scheduled',
                     partnerId: partnerId,
                     acceptedAt: timestamp,
-                    startOtp: otp
+                    startOtp: otp,
+                    customerName: selectedLead.customer?.name || 'Customer',
+                    customerPhone: selectedLead.customer?.phone || ''
                 };
-                updates[`partnerJobs/${partnerId}/${selectedLeadId}`] = jobData;
 
-                // B. CUSTOMER APP UPDATE (Sabse Important)
-                // Ye line customer app ka status "Finding..." se hatayegi
-                const customerPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
-                updates[`${customerPath}/status`] = 'assigned';
-                updates[`${customerPath}/partnerId`] = partnerId;
-                updates[`${customerPath}/partnerName`] = currentPartner.name; // Upar load kiya hua naam
-                updates[`${customerPath}/partnerPhone`] = currentPartner.phone || '';
-                updates[`${customerPath}/startOtp`] = otp;
+                // C. Admin Update
+                updates[`${mainOrderPath}/status`] = 'assigned';
+                updates[`${mainOrderPath}/partnerId`] = partnerId;
 
-                // C. Admin Panel aur Main Orders update
-                updates[`orders/${selectedLeadId}/status`] = 'assigned';
-                updates[`orders/${selectedLeadId}/partnerId`] = partnerId;
+                // D. Delete from Leads
+                updates[leadPath] = null;
 
-                // D. Leads list se hatana (Delete from leads)
-                updates[`leads/${selectedLeadId}`] = null;
-
-                // 4. Database me ek saath update karein
+                // DATABASE UPDATE
                 await db.ref().update(updates);
                 
-                showToast('Lead Accepted Successfully!', 'success');
+                // Success
+                // alert("Lead Accepted! Customer Notified."); // Debugging ke liye hata sakte hain
                 closeModal();
-                
-                // Jobs page par bhejein
-                setTimeout(() => {
-                    window.location.href = 'partner-jobs.html';
-                }, 1000);
+                window.location.href = 'partner-jobs.html';
 
             } catch (error) {
-                console.error(error);
-                showToast('Error: ' + error.message, 'error');
-                btn.innerHTML = 'Accept Lead';
-                btn.disabled = false;
-            }
+                console.error("Accept Error:", error);
+                alert("Database Error: " + error.message); // Ye batayega agar koi error aaya
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Accept Lead';
+                    btn.disabled = false;
                 }
-        
+            }
+        }
 
         function rejectLead(leadId) {
             if (!confirm('Are you sure you want to reject this lead?')) return;
