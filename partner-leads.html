@@ -559,7 +559,7 @@
         function closeModal() {
             document.getElementById('leadModal').classList.remove('active');
         }
-                        async function acceptLead() {
+                                async function acceptLead() {
             // 1. Basic Check
             if (!selectedLead || !selectedLeadId) {
                 alert("Error: No lead selected!");
@@ -567,17 +567,17 @@
             }
 
             // 2. CRITICAL CHECK: UserId hai ya nahi?
-            // Agar purani lead hai to usme userId nahi hoga, isliye naya order banakar test karein.
+            // Agar ye error aaye, iska matlab aap purani/galat lead try kar rahe hain.
             if (!selectedLead.userId) {
-                alert("Error: This lead is corrupted (Missing Customer ID). Please create a NEW Order to test.");
+                alert("🔴 ERROR: Is Lead me Customer ID nahi hai! \n\nKripya purani leads delete karein aur Customer App se NEW ORDER banayein.");
                 return;
             }
 
-            // 3. Partner Data Check (Undefined error rokne ke liye)
+            // 3. Partner Data Check
             const pName = (currentPartner && currentPartner.name) ? currentPartner.name : "Verified Partner";
             const pPhone = (currentPartner && currentPartner.phone) ? currentPartner.phone : "";
 
-            // Button Disable
+            // Button Disable (Loading...)
             const btn = document.getElementById('acceptBtn');
             if(btn) {
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
@@ -627,19 +627,20 @@
                 await db.ref().update(updates);
                 
                 // Success
-                // alert("Lead Accepted! Customer Notified."); // Debugging ke liye hata sakte hain
-                closeModal();
+                // Modal band karein aur page reload karein
+                document.getElementById('leadModal').classList.remove('active');
                 window.location.href = 'partner-jobs.html';
 
             } catch (error) {
                 console.error("Accept Error:", error);
-                alert("Database Error: " + error.message); // Ye batayega agar koi error aaya
+                alert("Database Error: " + error.message);
                 if(btn) {
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Accept Lead';
+                    btn.innerHTML = 'Accept Lead';
                     btn.disabled = false;
                 }
             }
         }
+
 
         function rejectLead(leadId) {
             if (!confirm('Are you sure you want to reject this lead?')) return;
