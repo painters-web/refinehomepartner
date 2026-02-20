@@ -555,93 +555,75 @@
         }
 
         async function acceptLead() {
-            // 1. Basic Check
-            if (!selectedLead || !selectedLeadId) {
-                alert("Error: No lead selected!");
-                return;
-            }
+    // 1. Basic Checks
+    if (!selectedLead || !selectedLeadId) return;
+    
+    const customerId = selectedLead.userId;
+    if (!customerId) {
+        alert("🔴 ERROR: Is Lead me Customer ID nahi hai! Naya order banayein.");
+        return;
+    }
 
-            // 2. FIXED: Get userId from lead data
-            const customerId = selectedLead.userId;
-            
-            console.log("DEBUG - Selected Lead:", selectedLead);
-            console.log("DEBUG - Customer ID:", customerId);
-            console.log("DEBUG - Lead ID:", selectedLeadId);
+    const btn = document.getElementById('acceptBtn');
+    if(btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+    }
 
-            if (!customerId) {
-                alert("🔴 ERROR: Is Lead me Customer ID nahi hai! \\n\\nKripya purani leads delete karein aur naya order banayein.");
-                return;
-            }
+    try {
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        const timestamp = firebase.database.ServerValue.TIMESTAMP;
+        const pName = (currentPartner && currentPartner.name) ? currentPartner.name : "Verified Partner";
 
-            // 3. Partner Data
-            const pName = (currentPartner && currentPartner.name) ? currentPartner.name : "Verified Partner";
-            const pPhone = (currentPartner && currentPartner.phone) ? currentPartner.phone : "";
+        // --- SABSE ZAROORI: Ek hi baar updates object banayein ---
+        const updates = {};
 
-            // Button Disable
-            const btn = document.getElementById('acceptBtn');
-            if(btn) {
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-                btn.disabled = true;
-            }
+        // Paths (Backticks use karein)
+        const customerPath = `users/${customerId}/orders/${selectedLeadId}`;
+        const partnerPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
+        const orderPath = `orders/${selectedLeadId}`;
+        const leadPath = `leads/${selectedLeadId}`;
 
-            try {
-                const otp = Math.floor(1000 + Math.random() * 9000);
-                const timestamp = firebase.database.ServerValue.TIMESTAMP;
-                
-                const updates = {};
-                
-                // FIXED: Correct paths
-                const updates = {};
-                
-                // Paths define karein (Backticks use karein)
-                const customerPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
-                const partnerPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
-                const orderPath = `orders/${selectedLeadId}`;
-                const leadPath = `leads/${selectedLeadId}`;
+        // 1. Customer Update (assigned)
+        updates[`${customerPath}/status`] = 'assigned';
+        updates[`${customerPath}/partnerId`] = partnerId;
+        updates[`${customerPath}/partnerName`] = pName;
+        updates[`${customerPath}/startOtp`] = otp;
 
-                // 1. Customer Update (assigned likhein)
-                updates[`${customerPath}/status`] = 'assigned';
-                updates[`${customerPath}/partnerId`] = partnerId;
-                updates[`${customerPath}/partnerName`] = pName;
-                updates[`${customerPath}/startOtp`] = otp;
+        // 2. Partner Job Update (assigned)
+        updates[partnerPath] = {
+            ...selectedLead,
+            jobId: selectedLeadId,
+            status: 'assigned',
+            partnerId: partnerId,
+            acceptedAt: timestamp,
+            startOtp: otp
+        };
 
-                // 2. Partner Job Update (Yahan 'assigned' kar dein)
-                updates[partnerPath] = {
-                    ...selectedLead,
-                    jobId: selectedLeadId,
-                    status: 'assigned', // <-- Scheduled ko Assigned kiya
-                    partnerId: partnerId,
-                    acceptedAt: timestamp,
-                    startOtp: otp
-                };
+        // 3. Main Order & Lead Delete
+        updates[`${orderPath}/status`] = 'assigned';
+        updates[`${orderPath}/partnerId`] = partnerId;
+        updates[leadPath] = null;
 
-                // D. Delete from Leads
-                updates[leadPath] = null;
+        // Final Database Update
+        await db.ref().update(updates);
+        
+        showToast('Lead accepted successfully!', 'success');
+        document.getElementById('leadModal').classList.remove('active');
+        
+        setTimeout(() => {
+            window.location.href = 'partner-jobs.html';
+        }, 1500);
 
-                console.log("DEBUG - Updates:", updates);
-
-                // Execute all updates
-                await db.ref().update(updates);
-                
-                showToast('Lead accepted successfully!', 'success');
-                
-                // Close modal and refresh
-                document.getElementById('leadModal').classList.remove('active');
-                
-                // Redirect to jobs page after short delay
-                setTimeout(() => {
-                    window.location.href = 'partner-jobs.html';
-                }, 1500);
-
-            } catch (error) {
-                console.error("Accept Error:", error);
-                alert("Database Error: " + error.message);
-                if(btn) {
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Accept Lead';
-                    btn.disabled = false;
-                }
-            }
+    } catch (error) {
+        console.error(error);
+        alert("Database Error: " + error.message);
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Accept Lead';
+            btn.disabled = false;
         }
+    }
+}
 
         function rejectLead(leadId) {
             if (!confirm('Are you sure you want to reject this lead?')) return;
