@@ -566,12 +566,19 @@
                 return;
             }
 
-            // 2. CRITICAL CHECK: UserId hai ya nahi?
-            // Agar ye error aaye, iska matlab aap purani/galat lead try kar rahe hain.
-            if (!selectedLead.userId) {
-                alert("🔴 ERROR: Is Lead me Customer ID nahi hai! \n\nKripya purani leads delete karein aur Customer App se NEW ORDER banayein.");
-                return;
-            }
+            // partner-leads.html mein acceptLead() function
+
+// Line 1: Check karo ki userId kis naam se saved hai
+const customerId = selectedLead.userId || selectedLead.uid || selectedLead.customerId;
+
+if (!customerId) {
+    alert("🔴 ERROR: Customer ID not found in lead!");
+    console.log("Lead data:", selectedLead); // Debug ke liye
+    return;
+}
+
+// Phir niche path mein customerId use karo
+const customerOrderPath = `users/${customerId}/orders/${selectedLeadId}`;
 
             // 3. Partner Data Check
             const pName = (currentPartner && currentPartner.name) ? currentPartner.name : "Verified Partner";
