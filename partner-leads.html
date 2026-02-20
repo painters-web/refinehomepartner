@@ -396,15 +396,14 @@
         }
 
         function renderLeads(leads) {
-            const list = document.getElementById('leadsList');
-            let filteredLeads = Object.entries(leads);
-            
-            if (currentFilter !== 'all') {
-                filteredLeads = filteredLeads.filter(([id, lead]) => 
-                    lead.category === currentFilter
-                );
-            }
-
+    const list = document.getElementById('leadsList');
+    let filteredLeads = Object.entries(leads);
+    
+    // DEBUG
+    console.log("Total leads:", filteredLeads.length);
+    if(filteredLeads.length > 0) {
+        console.log("First lead userId:", filteredLeads[0][1].userId);
+    }
             if (filteredLeads.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
