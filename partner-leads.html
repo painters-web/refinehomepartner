@@ -591,32 +591,26 @@
                 const updates = {};
                 
                 // FIXED: Correct paths
-                const customerOrderPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
-
-                const mainOrderPath = `orders/${selectedLeadId}`;
-                const partnerJobPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
+                const updates = {};
+                
+                // Paths define karein (Backticks use karein)
+                const customerPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
+                const partnerPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
+                const orderPath = `orders/${selectedLeadId}`;
                 const leadPath = `leads/${selectedLeadId}`;
 
-                // A. Customer Order Update (pending -> assigned)
-                updates[`${customerOrderPath}/status`] = 'assigned';
-                updates[`${customerOrderPath}/partnerId`] = partnerId;
-                updates[`${customerOrderPath}/partnerName`] = pName;
-                updates[`${customerOrderPath}/partnerPhone`] = pPhone;
-                updates[`${customerOrderPath}/startOtp`] = otp;
-                updates[`${customerOrderPath}/assignedAt`] = timestamp;
+                // 1. Customer Update (assigned likhein)
+                updates[`${customerPath}/status`] = 'assigned';
+                updates[`${customerPath}/partnerId`] = partnerId;
+                updates[`${customerPath}/partnerName`] = pName;
+                updates[`${customerPath}/startOtp`] = otp;
 
-                // B. Main Orders Update
-                updates[`${mainOrderPath}/status`] = 'assigned';
-                updates[`${mainOrderPath}/partnerId`] = partnerId;
-                updates[`${mainOrderPath}/partnerName`] = pName;
-
-                // C. Partner Job Create
-                updates[partnerJobPath] = {
+                // 2. Partner Job Update (Yahan 'assigned' kar dein)
+                updates[partnerPath] = {
                     ...selectedLead,
                     jobId: selectedLeadId,
-                    status: 'assigned',
+                    status: 'assigned', // <-- Scheduled ko Assigned kiya
                     partnerId: partnerId,
-                    partnerName: pName,
                     acceptedAt: timestamp,
                     startOtp: otp
                 };
