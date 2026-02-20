@@ -591,7 +591,8 @@
                 const updates = {};
                 
                 // FIXED: Correct paths
-                const customerOrderPath = `users/${customerId}/orders/${selectedLeadId}`;
+                const customerOrderPath = `users/${selectedLead.userId}/orders/${selectedLeadId}`;
+
                 const mainOrderPath = `orders/${selectedLeadId}`;
                 const partnerJobPath = `partnerJobs/${partnerId}/${selectedLeadId}`;
                 const leadPath = `leads/${selectedLeadId}`;
