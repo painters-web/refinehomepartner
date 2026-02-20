@@ -501,7 +501,7 @@
 
             list.innerHTML = filteredJobs.map(([id, job]) => {
                 const isPaintingOrWaterproofing = ['painting', 'waterproofing'].includes(job.category);
-                const showQuoteSection = job.status === 'scheduled' && isPaintingOrWaterproofing;
+                const showQuoteSection = job.status === 'assigned' && isPaintingOrWaterproofing;
                 const showAddons = job.status === 'assigned' && !isPaintingOrWaterproofing;
                 const showPayment = job.status === 'ongoing';
                 const showChecklist = job.status === 'ongoing';
