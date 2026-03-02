@@ -513,7 +513,8 @@
                             <div>
                                 <span class="job-status status-${job.status}">
                                     <i class="fa-solid fa-circle" style="font-size: 6px;"></i>
-                                    ${job.status === 'assigned' ? 'Assigned' : job.status === 'ongoing' ? 'In Progress' : 'Completed'}
+                                    ${job.status === "assigned" ? 'Assigned' : job.status === "ongoing" ? 'In Progress' : job.status === "completed" ? 'Completed' : job.status}
+
                                 </span>
                                 <div class="job-id" style="margin-top: 5px;">#${id.slice(-6).toUpperCase()}</div>
                             </div>
