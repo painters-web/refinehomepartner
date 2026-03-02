@@ -363,7 +363,7 @@
         <!-- Tabs -->
         <div class="tabs-scroll">
             <div class="tab-pill active" onclick="filterJobs('all', this)">All</div>
-            <div class="tab-pill" onclick="filterJobs('scheduled', this)">Scheduled</div>
+            <div class="tab-pill" onclick="filterJobs('assigned', this)">assigned</div>
             <div class="tab-pill" onclick="filterJobs('ongoing', this)">Ongoing</div>
             <div class="tab-pill" onclick="filterJobs('completed', this)">Completed</div>
         </div>
@@ -501,8 +501,8 @@
 
             list.innerHTML = filteredJobs.map(([id, job]) => {
                 const isPaintingOrWaterproofing = ['painting', 'waterproofing'].includes(job.category);
-                const showQuoteSection = job.status === 'scheduled' && isPaintingOrWaterproofing;
-                const showAddons = job.status === 'scheduled' && !isPaintingOrWaterproofing;
+                const showQuoteSection = job.status === 'assigned' && isPaintingOrWaterproofing;
+                const showAddons = job.status === 'assigned' && !isPaintingOrWaterproofing;
                 const showPayment = job.status === 'ongoing';
                 const showChecklist = job.status === 'ongoing';
                 const showStartBtn = job.status === 'scheduled';
@@ -513,7 +513,7 @@
                             <div>
                                 <span class="job-status status-${job.status}">
                                     <i class="fa-solid fa-circle" style="font-size: 6px;"></i>
-                                    ${job.status === 'scheduled' ? 'Scheduled' : job.status === 'ongoing' ? 'In Progress' : 'Completed'}
+                                    ${job.status === 'assigned' ? 'Assigned' : job.status === 'ongoing' ? 'In Progress' : 'Completed'}
                                 </span>
                                 <div class="job-id" style="margin-top: 5px;">#${id.slice(-6).toUpperCase()}</div>
                             </div>
