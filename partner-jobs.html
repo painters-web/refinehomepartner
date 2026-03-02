@@ -505,7 +505,7 @@
                 const showAddons = job.status === 'assigned' && !isPaintingOrWaterproofing;
                 const showPayment = job.status === 'ongoing';
                 const showChecklist = job.status === 'ongoing';
-                const showStartBtn = job.status === 'scheduled';
+                const showStartBtn = job.status === 'assigned';
 
                 return `
                     <div class="job-card" data-job-id="${id}">
